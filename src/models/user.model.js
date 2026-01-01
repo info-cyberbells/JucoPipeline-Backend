@@ -175,6 +175,30 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate']
     },
+    playerScore: {
+      type: Date,
+      default: null
+    },
+    jpRank: {
+      type: Date,
+      default: null
+    },
+    conferenceStrengthScore: {
+      type: Date,
+      default: null
+    },
+    velo: {
+      type: Date,
+      default: null
+    },
+    whip: {
+      type: Date,
+      default: null
+    },
+    region: {
+      type: Date,
+      default: null
+    },
     acedemicInfo: {
       url: String,
       filename: String,

@@ -2,7 +2,7 @@ import express from "express";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { authorizeRoles } from "../middleware/role.middleware.js";
 import { uploadProfile } from "../middleware/upload.middleware.js";
-import { getCoachDashboard, getSuggestedProfiles, followUser, unfollowUser, getFollowingList, getFollowersList, checkIfFollowing, getTopPlayers } from "../controllers/coach/coachDashboard.controller.js";
+import { getCoachDashboard, getSuggestedProfiles, followUser, unfollowUser, getFollowingList, getFollowersList, checkIfFollowing, getTopPlayers, followTeam, unfollowTeam, getFollowedTeams, checkIfFollowingTeam, getTeamFollowersCount } from "../controllers/coach/coachDashboard.controller.js";
 import { getCoachProfile, updateCoachProfile, updateCoachProfileImage, deleteCoachProfileImage, resetPassword, forgotPassword, verifyOtp } from "../controllers/coach/coachProfile.controller.js";
 import { validateUpdateCoachProfile, validateResetPassword, validateForgotPassword, validateVerifyOtp } from "../validation/coachProfile.validation.js";
 import { getTeamRoster } from "../controllers/teams.controller.js";
@@ -37,6 +37,13 @@ router.get("/following/check/:userId", checkIfFollowing);
 router.get("/following", getFollowingList);
 // Get followers list
 router.get("/followers", getFollowersList);
+
+// Teams Following
+router.post("/follow-team/:teamId", followTeam);
+router.delete("/unfollow-team/:teamId", unfollowTeam);
+router.get("/followed-teams", getFollowedTeams);
+router.get("/check-following-team/:teamId", checkIfFollowingTeam);
+router.get("/team-followers/:teamId", getTeamFollowersCount); 
 
 
 // Get followed players stats (for dashboard table)
