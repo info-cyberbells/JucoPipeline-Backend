@@ -2,9 +2,9 @@ import express from "express";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { authorizeRoles } from "../middleware/role.middleware.js";
 import { uploadProfile } from "../middleware/upload.middleware.js";
-import { validateUpdateScoutProfile, validateChangePassword } from "../validation/scoutProfile.validation.js";
+import { validateUpdateScoutProfile, validateForgotPassword, validateVerifyOtp, validateResetPassword } from "../validation/scoutProfile.validation.js";
 import { getScoutDashboard, getSuggestedProfiles, followUser, unfollowUser, getFollowingList, getFollowersList, checkIfFollowing, getTopPlayers } from "../controllers/scout/scoutDashboard.controller.js";
-import { getScoutProfile, updateScoutProfile, updateScoutProfileImage, deleteScoutProfileImage, changePassword } from "../controllers/scout/scoutProfile.controller.js";
+import { getScoutProfile, updateScoutProfile, updateScoutProfileImage, deleteScoutProfileImage, resetPassword, forgotPassword, verifyOtp } from "../controllers/scout/scoutProfile.controller.js";
 import { getPlayerById, getUncommittedPLayer, getTop10PlayersByMetric, getAvailableMetrics, searchPlayersForStatistics } from "../controllers/player/player.controller.js";
 import { getAllTeams, getTeamRoster } from "../controllers/teams.controller.js";
 import { getCoachStatistics } from "../controllers/coach/statistics.controller.js";
@@ -21,7 +21,11 @@ router.get("/profile", getScoutProfile);
 router.patch("/profile", validateUpdateScoutProfile, updateScoutProfile);
 router.patch("/profile-image", uploadProfile.fields([{ name: "profileImage", maxCount: 1 }]), updateScoutProfileImage);
 router.delete("/profile-image", deleteScoutProfileImage);
-router.put("/change-password", validateChangePassword, changePassword);
+// router.put("/change-password", validateChangePassword, changePassword);
+
+router.post("/forgot-password", validateForgotPassword, forgotPassword);
+router.post("/verify-otp", validateVerifyOtp, verifyOtp);
+router.put("/reset-password", validateResetPassword, resetPassword);
 
 router.get("/suggestions", getSuggestedProfiles);
 router.get("/top-players", getTopPlayers);
