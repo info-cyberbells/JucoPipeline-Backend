@@ -1,0 +1,46 @@
+API Call Examples
+Example 1: All Positions (Default)
+GET /api/coach/dashboard?page=1&limit=20&statsType=batting&sortBy=batting_average&sortOrder=desc
+JAAAAA
+GET /api/coach/dashboard?page=1&limit=20&statsType=batting&position=all
+
+
+Example 2: Filter by 1B Position
+GET /api/coach/dashboard?page=1&limit=20&statsType=batting&position=1B
+Result: Sirf 1B position ke players aayenge
+
+
+
+Example 3: Filter by Pitcher Position
+GET /api/coach/dashboard?page=1&limit=20&statsType=pitching&position=Pitcher
+Result: Sirf Pitcher position ke players aayenge
+
+
+Example 4: Filter by Starting Pitcher
+GET /api/coach/dashboard?page=1&limit=20&statsType=pitching&position=Starting Pitcher
+Result: Sirf Starting Pitcher position ke players aayenge
+
+
+Example 5: Position Filter + Stats Filters (Combined)
+GET /api/coach/dashboard?page=1&limit=20&statsType=batting&position=OF&batting_average_min=0.300&home_runs_min=10
+Result: Sirf OF position ke players aayenge JO batting average >= 0.300 aur home runs >= 10 ho
+
+
+Complete API Examples for All Filters
+Batting Stats with Position
+GET /api/coach/dashboard?page=1&limit=20&statsType=batting&position=1B&batting_average_min=0.300&batting_average_max=0.500&home_runs_min=5
+
+
+Pitching Stats with Position
+GET /api/coach/dashboard?page=1&limit=20&statsType=fielding&position=SS&fielding_percentage_min=0.950&errors_max=5
+
+Fielding Stats with Position
+GET /api/coach/dashboard?page=1&limit=20&statsType=fielding&position=SS&fielding_percentage_min=0.950&errors_max=5
+
+
+Query Parameter Structure
+Parameter : position
+Type : String
+Example Values : all, 1B, 2B, 3B, SS, OF, INF, Pitcher, Starting Pitcher
+Description : Filter by position
+

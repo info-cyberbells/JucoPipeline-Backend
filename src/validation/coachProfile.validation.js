@@ -1,0 +1,61 @@
+import Joi from "joi";
+
+// Change password validation
+export const changePasswordSchema = Joi.object({
+  currentPassword: Joi.string().required().messages({
+    "string.empty": "Current password is required",
+    "any.required": "Current password is required"
+  }),
+  newPassword: Joi.string().min(8).required().messages({
+    "string.empty": "New password is required",
+    "string.min": "New password must be at least 8 characters long",
+    "any.required": "New password is required"
+  }),
+  confirmPassword: Joi.string().required().valid(Joi.ref('newPassword')).messages({
+    "string.empty": "Confirm password is required",
+    "any.only": "New password and confirm password do not match",
+    "any.required": "Confirm password is required"
+  })
+}).unknown(false);
+
+// Validation middleware
+export const validateChangePassword = (req, res, next) => {
+  const { error } = changePasswordSchema.validate(req.body, { abortEarly: false });
+  if (error) {
+    return res.status(400).json({
+      message: error.details.map((d) => d.message).join(", "),
+    });
+  }
+  next();
+};
+
+// Update coach profile validation
+export const updateCoachProfileSchema = Joi.object({
+  firstName: Joi.string().trim().max(191).optional(),
+  lastName: Joi.string().trim().max(191).allow(null, '').optional(),
+  email: Joi.string().trim().email().optional(),
+  password: Joi.string().min(8).optional().allow(''),
+  phoneNumber: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).optional().messages({
+    "string.pattern.base": "Invalid phone number format"
+  }),
+  // Professional information
+  position: Joi.string().trim().max(191).optional(),
+  schoolType: Joi.string().valid("High School", "Junior College", "College", "University", "Other").optional(),
+  division: Joi.string().trim().max(191).allow(null, '').optional(),
+  conference: Joi.string().trim().max(191).allow(null, '').optional(),
+  state: Joi.string().trim().max(191).optional(),
+  school: Joi.string().trim().max(191).optional(),
+  organization: Joi.string().trim().max(191).allow(null, '').optional(),
+  jobTitle: Joi.string().trim().max(191).optional()
+}).unknown(false);
+
+// Validation middleware
+export const validateUpdateCoachProfile = (req, res, next) => {
+  const { error } = updateCoachProfileSchema.validate(req.body, { abortEarly: false });
+  if (error) {
+    return res.status(400).json({
+      message: error.details.map((d) => d.message).join(", "),
+    });
+  }
+  next();
+};
