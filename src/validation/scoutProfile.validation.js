@@ -1,10 +1,54 @@
 import Joi from "joi";
 
-// Change password validation
-export const changePasswordSchema = Joi.object({
-  currentPassword: Joi.string().required().messages({
-    "string.empty": "Current password is required",
-    "any.required": "Current password is required"
+// Forgot password validation
+export const forgotPasswordSchema = Joi.object({
+  email: Joi.string().trim().email().required().messages({
+    "string.empty": "Email is required",
+    "string.email": "Invalid email format",
+    "any.required": "Email is required"
+  })
+}).unknown(false);
+
+export const validateForgotPassword = (req, res, next) => {
+  const { error } = forgotPasswordSchema.validate(req.body, { abortEarly: false });
+  if (error) {
+    return res.status(400).json({
+      message: error.details.map((d) => d.message).join(", "),
+    });
+  }
+  next();
+};
+
+// Verify OTP validation
+export const verifyOtpSchema = Joi.object({
+  email: Joi.string().trim().email().required().messages({
+    "string.empty": "Email is required",
+    "string.email": "Invalid email format",
+    "any.required": "Email is required"
+  }),
+  otp: Joi.string().length(6).pattern(/^[0-9]+$/).required().messages({
+    "string.empty": "OTP is required",
+    "string.length": "OTP must be 6 digits",
+    "string.pattern.base": "OTP must contain only numbers",
+    "any.required": "OTP is required"
+  })
+}).unknown(false);
+
+export const validateVerifyOtp = (req, res, next) => {
+  const { error } = verifyOtpSchema.validate(req.body, { abortEarly: false });
+  if (error) {
+    return res.status(400).json({
+      message: error.details.map((d) => d.message).join(", "),
+    });
+  }
+  next();
+};
+
+// Reset password validation
+export const resetPasswordSchema = Joi.object({
+  resetToken: Joi.string().required().messages({
+    "string.empty": "Reset token is required",
+    "any.required": "Reset token is required"
   }),
   newPassword: Joi.string().min(8).required().messages({
     "string.empty": "New password is required",
@@ -18,9 +62,8 @@ export const changePasswordSchema = Joi.object({
   })
 }).unknown(false);
 
-// Validation middleware
-export const validateChangePassword = (req, res, next) => {
-  const { error } = changePasswordSchema.validate(req.body, { abortEarly: false });
+export const validateResetPassword = (req, res, next) => {
+  const { error } = resetPasswordSchema.validate(req.body, { abortEarly: false });
   if (error) {
     return res.status(400).json({
       message: error.details.map((d) => d.message).join(", "),
