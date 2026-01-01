@@ -271,10 +271,10 @@ const sendOTPEmail = async (email, otp, firstName) => {
         <p style="color: #666;">This OTP is valid for <strong>10 minutes</strong>.</p>
         <p style="color: #999; font-size: 14px;">If you did not request this, please ignore this email and your password will remain unchanged.</p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-        <p style="color: #999; font-size: 12px;">Best regards,<br>Your Team</p>
+        <p style="color: #999; font-size: 12px;">Best regards,<br>Juco Pipeline</p>
       </div>
     `,
-    text: `Hello ${firstName || 'scout'},\n\nYou have requested to reset your password. Please use the following OTP to proceed:\n\n${otp}\n\nThis OTP is valid for 10 minutes.\n\nIf you did not request this, please ignore this email.\n\nBest regards,\nJuco Pipeline`
+    text: `Hello ${firstName || 'scout'},\n\nYou have requested to reset your password. Please use the following OTP to proceed:\n\n${otp}\n\nThis OTP is valid for 10 minutes.\n\nIf you did not request this, please ignore this email.\n\nJuco Pipeline,\nJuco Pipeline`
   };
 
   try {
