@@ -7,6 +7,7 @@ import { getCoachProfile, updateCoachProfile, updateCoachProfileImage, deleteCoa
 import { validateUpdateCoachProfile, validateChangePassword } from "../validation/coachProfile.validation.js";
 import { getTeamRoster } from "../controllers/teams.controller.js";
 import { getPlayerById, getUncommittedPLayer, getTop10PlayersByMetric, getAvailableMetrics, searchPlayersForStatistics } from "../controllers/player/player.controller.js";
+import { saveFilter, getMyFilters, deleteFilter } from "../controllers/coach/savedFilter.controller.js";
 
 const router = express.Router();
 // Protect all routes with coach role
@@ -18,7 +19,7 @@ router.get("/dashboard", getCoachDashboard);
 // Profile
 router.get("/profile", getCoachProfile);
 router.patch("/profile", validateUpdateCoachProfile, updateCoachProfile);
-router.patch( "/profile-image", uploadProfile.fields([{ name: "profileImage", maxCount: 1 }]), updateCoachProfileImage );
+router.patch("/profile-image", uploadProfile.fields([{ name: "profileImage", maxCount: 1 }]), updateCoachProfileImage);
 router.delete("/profile-image", deleteCoachProfileImage);
 router.put("/change-password", validateChangePassword, changePassword);
 
@@ -46,5 +47,10 @@ router.get("/statistics/search", searchPlayersForStatistics);
 
 // Teams
 router.get("/team-roster/:teamId", getTeamRoster);
+
+//saved filters
+router.post("/save-filter", saveFilter);
+router.get("/my-filters", getMyFilters);
+router.delete("/delete-filter/:id", deleteFilter);
 
 export default router;

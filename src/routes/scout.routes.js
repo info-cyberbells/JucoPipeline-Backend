@@ -8,6 +8,8 @@ import { getScoutProfile, updateScoutProfile, updateScoutProfileImage, deleteSco
 import { getPlayerById, getUncommittedPLayer, getTop10PlayersByMetric, getAvailableMetrics, searchPlayersForStatistics } from "../controllers/player/player.controller.js";
 import { getAllTeams, getTeamRoster } from "../controllers/teams.controller.js";
 import { getCoachStatistics } from "../controllers/coach/statistics.controller.js";
+import { saveFilter, getMyFilters, deleteFilter } from "../controllers/coach/savedFilter.controller.js";
+
 const router = express.Router();
 router.use(authenticate, authorizeRoles("scout"));
 
@@ -17,7 +19,7 @@ router.get("/dashboard", getScoutDashboard);
 // Profile
 router.get("/profile", getScoutProfile);
 router.patch("/profile", validateUpdateScoutProfile, updateScoutProfile);
-router.patch( "/profile-image", uploadProfile.fields([{ name: "profileImage", maxCount: 1 }]), updateScoutProfileImage );
+router.patch("/profile-image", uploadProfile.fields([{ name: "profileImage", maxCount: 1 }]), updateScoutProfileImage);
 router.delete("/profile-image", deleteScoutProfileImage);
 router.put("/change-password", validateChangePassword, changePassword);
 
@@ -41,5 +43,11 @@ router.get("/statistics/search", searchPlayersForStatistics);
 
 // Get statistics
 router.get("/statistics", getCoachStatistics);
+
+
+//saved filters
+router.post("/save-filter", saveFilter);
+router.get("/my-filters", getMyFilters);
+router.delete("/delete-filter/:id", deleteFilter);
 
 export default router;
