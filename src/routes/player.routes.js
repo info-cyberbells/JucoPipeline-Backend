@@ -6,6 +6,7 @@ import { validateChangePassword } from "../validation/profile.validation.js";
 import { getPlayerProfile, updatePlayerProfile, updatePlayerProfileImage, deletePlayerProfileImage, uploadPlayerVideos, deletePlayerVideo, uploadCoachRecommendation, deleteCoachRecommendation, uploadAcademicInfo, deleteAcademicInfo, addStrength,  removeStrength, addAward, removeAward } from "../controllers/player/player.controller.js";
 import { uploadVideos, uploadPDF } from "../middleware/mediaUpload.middleware.js";
 import { uploadProfile } from "../middleware/upload.middleware.js";
+import { getTeamRoster } from "../controllers/teams.controller.js";
 
 const router = express.Router();
 
@@ -48,5 +49,8 @@ router.delete("/strengths", removeStrength);
 // Awards management
 router.post("/awards", addAward);
 router.delete("/awards", removeAward);
+
+// Teams
+router.get("/team-roster/:teamId", getTeamRoster);
 
 export default router;
