@@ -57,7 +57,8 @@ export const getTeamRoster = async (req, res) => {
     const sortOptions = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
     const [players, totalCount] = await Promise.all([
       User.find(filter)
-        .populate('team', 'name logo location division')
+        // .populate('team', 'name logo location division')
+        .populate('team')
         .select("firstName lastName email position jerseyNumber height weight batsThrows profileImage battingStats pitchingStats fieldingStats")
         .sort(sortOptions)
         .skip(skip)
@@ -95,11 +96,7 @@ export const getTeamRoster = async (req, res) => {
         batThrow: userData.batsThrows || "N/A",
         profileImage: userData.profileImage,
         isFollowing: followedSet.has(userData._id.toString()),
-        team: {
-          _id: userData.team?._id,
-          name: userData.team?.name,
-          logo: teamLogo
-        },
+        team,
         stats: {
           battingStats,
           pitchingStats,

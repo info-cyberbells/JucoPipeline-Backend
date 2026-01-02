@@ -108,7 +108,7 @@ export const getPlayerProfile = async (req, res) => {
   try {
     const playerId = req.user.id;
     
-    const player = await User.findById(playerId).select("-password");
+    const player = await User.findById(playerId).populate('team').select("-password");
     
     if (!player || player.role !== "player") {
       return res.status(404).json({ message: "Player not found" });
