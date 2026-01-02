@@ -7,13 +7,62 @@ import mongoose from "mongoose";
 // Helper to format user data
 const formatUserData = (user, baseURL) => {
   const userData = user.toObject();
-  
+
   if (userData.profileImage && !userData.profileImage.startsWith("http")) {
     userData.profileImage = `${baseURL}${userData.profileImage}`;
   }
-  
+
   delete userData.password;
   return userData;
+};
+
+const formatPlayerData = (player, baseURL) => {
+  const playerData = player.toObject();
+  console.log('playerData',playerData)
+  // Format profile image
+  if (playerData.profileImage && !playerData.profileImage.startsWith("http")) {
+    playerData.profileImage = `${baseURL}${playerData.profileImage}`;
+  }
+  
+  // Format videos
+  if (playerData.videos && playerData.videos.length > 0) {
+    playerData.videos = playerData.videos.map(video => ({
+      ...video,
+      url: video.url.startsWith("http") ? video.url : `${baseURL}${video.url}`
+    }));
+  }
+  
+  // Format coach recommendation
+  if (playerData.coachRecommendation && playerData.coachRecommendation.url) {
+    if (!playerData.coachRecommendation.url.startsWith("http")) {
+      playerData.coachRecommendation.url = `${baseURL}${playerData.coachRecommendation.url}`;
+    }
+  }
+
+  if (playerData.acedemicInfo && playerData.acedemicInfo.url) {
+    if (!playerData.acedemicInfo.url.startsWith("http")) {
+      playerData.acedemicInfo.url = `${baseURL}${playerData.acedemicInfo.url}`;
+    }
+  }
+
+  if (playerData.photoIdDocument && playerData.photoIdDocument.documentUrl) {
+    if (!playerData.photoIdDocument.documentUrl.startsWith("http")) {
+      playerData.photoIdDocument.documentUrl = `${baseURL}${playerData.photoIdDocument.documentUrl}`;
+    }
+  }
+  
+  // Calculate profile completeness
+  // const completeness = calculateProfileCompleteness(player);
+  // playerData.profileCompleteness = completeness.percentage;
+  // playerData.profileCompletion = {
+  //   percentage: completeness.percentage,
+  //   completedItems: completeness.completionItems,
+  //   missingItems: completeness.missingItems,
+  //   isComplete: completeness.percentage === 100
+  // };
+  
+  delete playerData.password;
+  return playerData;
 };
 
 // GET TEAM ROSTER 
@@ -59,7 +108,8 @@ export const getTeamRoster = async (req, res) => {
       User.find(filter)
         // .populate('team', 'name logo location division')
         .populate('team')
-        .select("firstName lastName email position jerseyNumber height weight batsThrows profileImage battingStats pitchingStats fieldingStats")
+        // .select("firstName lastName email position jerseyNumber height weight batsThrows profileImage battingStats pitchingStats fieldingStats")
+        .select("firstName lastName email position jerseyNumber height weight batsThrows profileImage battingStats pitchingStats fieldingStats primaryPosition act gpa sat description instaURL playerClass title transferStatus xURL acedemicInfo photoIdDocument photoIdDocuments videos strengths awardsAchievements profileCompleteness commitmentStatus hometown highSchool previousSchool csvImported lastCsvImport registrationStatus approvedBy approvedAt isActive subscriptionStatus subscriptionPlan commitmentUpdatedByAdmin")
         .sort(sortOptions)
         .skip(skip)
         .limit(parseInt(limit)),
@@ -71,37 +121,11 @@ export const getTeamRoster = async (req, res) => {
     const followedPlayers = await Follow.find({ follower: coachId, following: { $in: playerIds } }).distinct('following');
     const followedSet = new Set(followedPlayers.map(id => id.toString()));
     const formattedPlayers = players.map(player => {
-      const userData = formatUserData(player, baseURL);
-      
-      const battingStats = userData.battingStats?.[0] || {};
-      const pitchingStats = userData.pitchingStats?.[0] || {};
-      const fieldingStats = userData.fieldingStats?.[0] || {};
-
-      // Format team logo
-      let teamLogo = userData.team?.logo;
-      if (teamLogo && !teamLogo.startsWith("http")) {
-        teamLogo = `${baseURL}${teamLogo}`;
-      }
+      const playerData = formatPlayerData(player, baseURL);
 
       return {
-        _id: userData._id,
-        name: `${userData.firstName} ${userData.lastName}`,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        position: userData.position || "N/A",
-        jerseyNumber: userData.jerseyNumber || "N/A",
-        class: battingStats.seasonYear || pitchingStats.seasonYear || fieldingStats.seasonYear || "N/A",
-        height: userData.height || "N/A",
-        weight: userData.weight || "N/A",
-        batThrow: userData.batsThrows || "N/A",
-        profileImage: userData.profileImage,
-        isFollowing: followedSet.has(userData._id.toString()),
-        team,
-        stats: {
-          battingStats,
-          pitchingStats,
-          fieldingStats
-        },
+        ...playerData,
+        isFollowing: followedSet.has(playerData._id.toString())
       };
     });
 
@@ -176,7 +200,7 @@ export const getAllTeamsWithoutPagination = async (req, res) => {
 
         const baseURL = `${req.protocol}://${req.get("host")}`;
         const teamData = team.toObject();
-        
+
         if (teamData.logo && !teamData.logo.startsWith("http")) {
           teamData.logo = `${baseURL}${teamData.logo}`;
         }
@@ -332,7 +356,7 @@ export const searchTeams = async (req, res) => {
       .sort({ name: 1 });
 
     const baseURL = `${req.protocol}://${req.get("host")}`;
-    
+
     const formattedTeams = teams.map(team => {
       const teamData = team.toObject();
       if (teamData.logo && !teamData.logo.startsWith("http")) {
@@ -381,7 +405,7 @@ export const getTeamById = async (req, res) => {
 
     const baseURL = `${req.protocol}://${req.get("host")}`;
     const teamData = team.toObject();
-    
+
     if (teamData.logo && !teamData.logo.startsWith("http")) {
       teamData.logo = `${baseURL}${teamData.logo}`;
     }
@@ -416,7 +440,7 @@ export const getTeamDetails = async (req, res) => {
 
     const baseURL = `${req.protocol}://${req.get("host")}`;
     const teamData = team.toObject();
-    
+
     if (teamData.logo && !teamData.logo.startsWith("http")) {
       teamData.logo = `${baseURL}${teamData.logo}`;
     }
@@ -440,7 +464,7 @@ export const getTeamStats = async (req, res) => {
     }
 
     const team = await Team.findById(teamId);
-    
+
     if (!team) {
       return res.status(404).json({ message: "Team not found" });
     }
@@ -495,7 +519,7 @@ export const getTeamStats = async (req, res) => {
 
     const teamAverage = totalAtBats > 0 ? (totalHits / totalAtBats).toFixed(3) : "0.000";
     const baseURL = `${req.protocol}://${req.get("host")}`;
-    
+
     let teamLogo = team.logo;
     if (teamLogo && !teamLogo.startsWith("http")) {
       teamLogo = `${baseURL}${teamLogo}`;
@@ -515,8 +539,8 @@ export const getTeamStats = async (req, res) => {
         totalRBI,
         totalWins,
         totalLosses,
-        winPercentage: totalWins + totalLosses > 0 
-          ? ((totalWins / (totalWins + totalLosses)) * 100).toFixed(1) 
+        winPercentage: totalWins + totalLosses > 0
+          ? ((totalWins / (totalWins + totalLosses)) * 100).toFixed(1)
           : "0.0",
         topPerformer
       }

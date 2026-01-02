@@ -17,6 +17,8 @@ const storage = multer.diskStorage({
       dir = "./uploads/videos";
     } else if (file.fieldname === "recommendation") {
       dir = "./uploads/recommendations";
+    } else if (file.fieldname === "academicInfo") {
+      dir = "./uploads/academicinfo";
     } else {
       dir = "./uploads/documents";
     }
