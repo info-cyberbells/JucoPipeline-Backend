@@ -109,7 +109,7 @@ export const getTeamRoster = async (req, res) => {
         // .populate('team', 'name logo location division')
         .populate('team')
         // .select("firstName lastName email position jerseyNumber height weight batsThrows profileImage battingStats pitchingStats fieldingStats")
-        .select("firstName lastName email position jerseyNumber height weight batsThrows profileImage battingStats pitchingStats fieldingStats primaryPosition act gpa sat description instaURL playerClass title transferStatus xURL acedemicInfo photoIdDocument photoIdDocuments videos strengths awardsAchievements profileCompleteness commitmentStatus hometown highSchool previousSchool csvImported lastCsvImport registrationStatus approvedBy approvedAt isActive subscriptionStatus subscriptionPlan commitmentUpdatedByAdmin")
+        .select("firstName lastName email position jerseyNumber height weight batsThrows profileImage battingStats pitchingStats fieldingStats primaryPosition act gpa sat description instaURL playerClass title transferStatus xURL coachRecommendation acedemicInfo photoIdDocument photoIdDocuments videos strengths awardsAchievements profileCompleteness commitmentStatus hometown highSchool previousSchool csvImported lastCsvImport registrationStatus approvedBy approvedAt isActive subscriptionStatus subscriptionPlan commitmentUpdatedByAdmin")
         .sort(sortOptions)
         .skip(skip)
         .limit(parseInt(limit)),
