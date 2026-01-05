@@ -17,8 +17,7 @@ const formatUserData = (user, baseURL) => {
 };
 
 const formatPlayerData = (player, baseURL) => {
-  const playerData = player.toObject();
-  console.log('playerData',playerData)
+  const playerData = typeof player.toObject === "function" ? player.toObject() : player;
   // Format profile image
   if (playerData.profileImage && !playerData.profileImage.startsWith("http")) {
     playerData.profileImage = `${baseURL}${playerData.profileImage}`;
@@ -51,26 +50,18 @@ const formatPlayerData = (player, baseURL) => {
     }
   }
   
-  // Calculate profile completeness
-  // const completeness = calculateProfileCompleteness(player);
-  // playerData.profileCompleteness = completeness.percentage;
-  // playerData.profileCompletion = {
-  //   percentage: completeness.percentage,
-  //   completedItems: completeness.completionItems,
-  //   missingItems: completeness.missingItems,
-  //   isComplete: completeness.percentage === 100
-  // };
-  
   delete playerData.password;
   return playerData;
 };
 
+const normalizeSeasonYear = (year) => year?.split('-')[0];
+
 // GET TEAM ROSTER 
-export const getTeamRoster = async (req, res) => {
+export const getTeamRosterOLLLLDDDDD = async (req, res) => {
   try {
     const coachId = req.user.id;
     const { teamId } = req.params;
-    const { page = 1, limit = 10, position, class: playerClass, batThrow, sortBy = "firstName", sortOrder = "asc", search } = req.query;
+    const { page = 1, limit = 10, position, seasonYear, class: playerClass, batThrow, sortBy = "firstName", sortOrder = "asc", search } = req.query;
     if (!mongoose.Types.ObjectId.isValid(teamId)) {
       return res.status(400).json({ message: "Invalid team ID" });
     }
@@ -87,12 +78,26 @@ export const getTeamRoster = async (req, res) => {
       filter.position = { $regex: new RegExp(position, 'i') };
     }
 
-    if (playerClass && playerClass !== "all") {
-      filter['battingStats.seasonYear'] = playerClass;
-    }
+    if (seasonYear && seasonYear !== "all") {
+      const baseYear = normalizeSeasonYear(seasonYear);
 
-    if (batThrow && batThrow !== "all") {
-      filter.batsThrows = { $regex: new RegExp(batThrow, 'i') };
+      filter.battingStats = {
+        $elemMatch: {
+          seasonYear: { $regex: new RegExp(`^${baseYear}`) }
+        }
+      };
+
+      filter.fieldingStats = {
+        $elemMatch: {
+          seasonYear: { $regex: new RegExp(`^${baseYear}`) }
+        }
+      };
+
+      filter.pitchingStats = {
+        $elemMatch: {
+          seasonYear: { $regex: new RegExp(`^${baseYear}`) }
+        }
+      };
     }
 
     if (search) {
@@ -164,6 +169,128 @@ export const getTeamRoster = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// GET TEAM ROSTER
+export const getTeamRoster = async (req, res) => {
+  // try {
+    const coachId = req.user.id;
+    const { teamId } = req.params;
+    const {
+      page = 1,
+      limit = 10,
+      position,
+      seasonYear,
+      sortBy = "firstName",
+      sortOrder = "asc",
+      search
+    } = req.query;
+
+    if (!mongoose.Types.ObjectId.isValid(teamId)) {
+      return res.status(400).json({ message: "Invalid team ID" });
+    }
+
+    const baseURL = `${req.protocol}://${req.get("host")}`;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const baseYear = normalizeSeasonYear(seasonYear);
+
+    const matchStage = {
+      role: "player",
+      team: new mongoose.Types.ObjectId(teamId),
+      registrationStatus: "approved",
+      isActive: true
+    };
+
+    if (position && position !== "all") {
+      matchStage.position = { $regex: position, $options: "i" };
+    }
+
+    if (search) {
+      matchStage.$or = [
+        { firstName: { $regex: search, $options: "i" } },
+        { lastName: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    if (seasonYear && seasonYear !== "all") {
+      matchStage.$and = [
+        { battingStats: { $elemMatch: { seasonYear: { $regex: `^${baseYear}` } } } },
+        { fieldingStats: { $elemMatch: { seasonYear: { $regex: `^${baseYear}` } } } },
+        { pitchingStats: { $elemMatch: { seasonYear: { $regex: `^${baseYear}` } } } }
+      ];
+    }
+
+    const pipeline = [
+      { $match: matchStage },
+
+      {
+        $addFields: {
+          battingStats: {
+            $filter: {
+              input: "$battingStats",
+              as: "stat",
+              cond: { $regexMatch: { input: "$$stat.seasonYear", regex: `^${baseYear}` } }
+            }
+          },
+          fieldingStats: {
+            $filter: {
+              input: "$fieldingStats",
+              as: "stat",
+              cond: { $regexMatch: { input: "$$stat.seasonYear", regex: `^${baseYear}` } }
+            }
+          },
+          pitchingStats: {
+            $filter: {
+              input: "$pitchingStats",
+              as: "stat",
+              cond: { $regexMatch: { input: "$$stat.seasonYear", regex: `^${baseYear}` } }
+            }
+          }
+        }
+      },
+
+      { $sort: { [sortBy]: sortOrder === "asc" ? 1 : -1 } },
+      { $skip: skip },
+      { $limit: parseInt(limit) }
+    ];
+
+    const [players, totalCount] = await Promise.all([
+      User.aggregate(pipeline),
+      User.countDocuments(matchStage)
+    ]);
+
+    const playerIds = players.map(p => p._id);
+    const followedPlayers = await Follow.find({
+      follower: coachId,
+      following: { $in: playerIds }
+    }).distinct("following");
+
+    const followedSet = new Set(followedPlayers.map(id => id.toString()));
+
+    const formattedPlayers = players.map(player => {
+      const playerData = formatPlayerData(player, baseURL);
+      return {
+        ...playerData,
+        isFollowing: followedSet.has(player._id.toString())
+      };
+    });
+
+    res.json({
+      message: "Team roster retrieved successfully",
+      players: formattedPlayers,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalCount / limit),
+        totalCount,
+        limit: parseInt(limit),
+        hasMore: skip + formattedPlayers.length < totalCount
+      }
+    });
+
+  // } catch (error) {
+  //   res.status(500).json({ message: error.message });
+  // }
+};
+
 
 // GET ALL TEAMS 
 export const getAllTeamsWithoutPagination = async (req, res) => {

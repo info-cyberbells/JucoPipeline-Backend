@@ -915,7 +915,10 @@ export const getUncommittedPLayer = async (req, res) => {
       assists_min,
       assists_max,
       double_plays_min,
-      double_plays_max
+      double_plays_max,
+
+      commitmentStatus,
+      name
     } = req.query;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -925,6 +928,20 @@ export const getUncommittedPLayer = async (req, res) => {
       role: "player",
       registrationStatus : "approved"
     };
+
+    // === COMMITMENT STATUS FILTER ===
+    if (commitmentStatus) {
+      filter.commitmentStatus = commitmentStatus; // committed | uncommitted
+    }
+
+    // === NAME SEARCH (firstName + lastName) ===
+    if (name) {
+      const regex = new RegExp(name, "i");
+      filter.$or = [
+        { firstName: regex },
+        { lastName: regex }
+      ];
+    }
 
     // === APPLY BATTING FILTERS ===
     if (batting_average_min || batting_average_max) {
