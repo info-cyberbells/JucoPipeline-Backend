@@ -920,6 +920,7 @@ export const checkIfFollowing = async (req, res) => {
   }
 };
 
+
 // GET TOP PLAYERS
 export const getTopPlayers = async (req, res) => {
   try {
@@ -936,7 +937,7 @@ export const getTopPlayers = async (req, res) => {
       isActive: true,
       _id: { $ne: coachId, $nin: alreadyFollowing }
     })
-      .select("firstName lastName email teamName position jerseyNumber profileImage profileCompleteness battingStats")
+      // .select("firstName lastName email teamName position jerseyNumber profileImage profileCompleteness battingStats")
       .sort({ profileCompleteness: -1 })
       .limit(parseInt(limit));
 

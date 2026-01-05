@@ -19,7 +19,7 @@ const formatUserData = (user, baseURL) => {
 export const getScoutProfile = async (req, res) => {
   try {
     const scoutId = req.user.id;
-    const scout = await User.findById(scoutId).select("-password");
+    const scout = await User.findById(scoutId).populate('team').select("-password");
     if (!scout || scout.role !== "scout") {
       return res.status(403).json({ message: "Access denied. scout role required." });
     }

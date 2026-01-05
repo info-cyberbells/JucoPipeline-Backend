@@ -1182,7 +1182,7 @@ export const getUncommittedPLayer = async (req, res) => {
     // === COUNT AND FETCH PLAYERS ===
     const totalPlayers = await User.countDocuments(filter);
     const players = await User.find(filter)
-      .populate("team", "name logo location division region rank coachName home away neutral conference")
+      .populate("team")
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
@@ -1285,7 +1285,7 @@ export const getTop10PlayersByMetric = async (req, res) => {
     const sortOrder = metric === "era" ? 1 : -1;
 
     // Get top players
-    const players = await User.find(filter).populate('team', 'name logo location division').select(`firstName lastName profileImage position videos team ${statsField}`).sort({ [sortField]: sortOrder }).limit(parseInt(limit));
+    const players = await User.find(filter).populate('team').select(`firstName lastName profileImage position videos team ${statsField}`).sort({ [sortField]: sortOrder }).limit(parseInt(limit));
     // Get following status for players
     const playerIds = players.map(p => p._id);
     const followedPlayers = await Follow.find({ follower: coachId, following: { $in: playerIds }}).distinct('following');

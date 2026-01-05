@@ -906,7 +906,7 @@ export const getTopPlayers = async (req, res) => {
       _id: { $ne: scoutId, $nin: alreadyFollowing }
     })
       .populate('team', 'name logo location division')
-      .select("firstName lastName email position jerseyNumber profileImage profileCompleteness battingStats team")
+      // .select("firstName lastName email position jerseyNumber profileImage profileCompleteness battingStats team")
       .sort({ profileCompleteness: -1 })
       .limit(parseInt(limit));
 
