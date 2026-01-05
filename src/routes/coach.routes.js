@@ -8,6 +8,7 @@ import { validateUpdateCoachProfile, validateResetPassword, validateForgotPasswo
 import { getTeamRoster } from "../controllers/teams.controller.js";
 import { getPlayerById, getUncommittedPLayer, getTop10PlayersByMetric, getAvailableMetrics, searchPlayersForStatistics } from "../controllers/player/player.controller.js";
 import { saveFilter, getMyFilters, deleteFilter } from "../controllers/coach/savedFilter.controller.js";
+import { createCoachNote, getCoachNotes, getNotesForPlayer, getSingleNote, updateCoachNote, deleteCoachNote } from "../controllers/coachNote.controller.js";
 
 const router = express.Router();
 // Protect all routes with coach role
@@ -63,5 +64,13 @@ router.get("/team-roster/:teamId", getTeamRoster);
 router.post("/save-filter", saveFilter);
 router.get("/my-filters", getMyFilters);
 router.delete("/delete-filter/:id", deleteFilter);
+
+// Coach Notes
+router.post("/create-note", createCoachNote);
+router.get("/get-notes", getCoachNotes);
+router.get("/get-note/player/:playerId", getNotesForPlayer);
+router.get("/get-note/:noteId", getSingleNote);
+router.put("/update-note/:noteId", updateCoachNote);
+router.delete("/delete-note/:noteId", deleteCoachNote);
 
 export default router;
