@@ -1,5 +1,5 @@
 import express from "express";
-import { getUSStates, register, login, logout, registerPlayer, loginPlayer, approvePlayer, rejectPlayer, getPendingPlayers, getTeams, getTeamById, registerWithPayment, verifyRegistrationStatus } from "../controllers/auth.controller.js";
+import { getUSStates, register, login, logout, registerPlayer, loginPlayer, approvePlayer, rejectPlayer, getPendingPlayers, getTeams, getTeamById, registerWithPayment, verifyRegistrationStatus, registerJucoCoachaMedia } from "../controllers/auth.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { authorizeRoles } from "../middleware/role.middleware.js";
 import {validateRegister, validateLogin, validatePlayerRegister, validatePlayerLogin, validateRejectPlayer} from "../validation/auth.validation.js";
@@ -22,6 +22,7 @@ router.get("/verify-registration", verifyRegistrationStatus);
 
 router.post("/webhooks/outseta", express.json(), handleOutsetaWebhook);
 
+router.post("/jucocoach-media-register", registerJucoCoachaMedia);
 
 // Player registration
 // router.post("/player/register", validatePlayerRegister, registerPlayer);

@@ -531,7 +531,7 @@ export const getPendingPlayers = async (req, res) => {
 export const register = async (req, res) => {
   try {
     const { firstName, lastName, email, password, role, teamId, jobTitle, school, division, conference, state } = req.body;
-    console.log('req.body',req.body);
+    // console.log('req.body',req.body);
     const existing = await User.findOne({ email });
     if (existing) {
       return res.status(400).json({ message: "User already exists" });
@@ -1584,5 +1584,49 @@ export const resetPassword = async (req, res) => {
   } catch (error) {
     console.error("Reset password error:", error);
     return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+// Juco Coach and Media Registration
+export const registerJucoCoachaMedia = async (req, res) => {
+  try {
+    const { email, role } = req.body;
+
+    if (!email || !role) {
+      return res.status(400).json({
+        message: "Email and role are required"
+      });
+    }
+
+    if (["superAdmin", "player"].includes(role)) {
+      return res.status(403).json({
+        message: `${role} cannot use this registration endpoint`
+      });
+    }
+
+    if (role === "coach" || role === "scout") {
+      return res.status(400).json({
+        message: "`$role` must use the their registration endpoint"
+      });
+    }
+
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const user = await User.create({
+      email,
+      role,
+      registrationStatus: "pending"
+    });
+
+    return res.status(201).json({
+      message: `User with role ${role} registered successfully`,
+      user
+    })
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

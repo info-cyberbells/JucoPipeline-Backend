@@ -106,7 +106,13 @@ const pitchingStatsSchema = new mongoose.Schema({
 
 const userSchema = new mongoose.Schema(
   {
-    firstName: { type: String, required: true, trim: true },
+    firstName: { 
+      type: String, 
+      required: function () {
+        return this.role !== "jucocoach" && this.role !== "media";
+      },
+      trim: true 
+    },
     lastName: { type: String, trim: true },
     email: {
       type: String,
@@ -127,13 +133,13 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: function () {
-        return this.role !== "player";
+        return this.role !== "player" && this.role !== "jucocoach" && this.role !== "media";
       },
       minlength: 6
     },
     role: {
       type: String,
-      enum: ["superAdmin", "scout", "coach", "player"],
+      enum: ["superAdmin", "scout", "coach", "player", 'jucocoach', 'media'],
       required: true,
     },
     phoneNumber: {
