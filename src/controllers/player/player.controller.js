@@ -923,14 +923,35 @@ export const getUncommittedPLayer = async (req, res) => {
     if (commitmentStatus) {
       filter.commitmentStatus = commitmentStatus; // committed | uncommitted
     }
-
+    console.log('name',name)
     // === NAME SEARCH (firstName + lastName) ===
+    // if (name) {
+    //   const regex = new RegExp(name, "i");
+    //   console.log('regex',regex);
+    //   filter.$or = [
+    //     { firstName: regex },
+    //     { lastName: regex }
+    //   ];
+    // }
+
     if (name) {
-      const regex = new RegExp(name, "i");
-      filter.$or = [
-        { firstName: regex },
-        { lastName: regex }
-      ];
+      const parts = name.trim().split(/\s+/);
+      // console.log('parts',parts);
+      if (parts.length === 1) {
+        const regex = new RegExp(parts[0], "i");
+        filter.$or = [
+          { firstName: regex },
+          { lastName: regex }
+        ];
+      } else {
+        const firstName = parts[0];
+        const lastName = parts[1];
+        // console.log('FullName',firstName,lastName);
+        filter.$and = [
+          { firstName: new RegExp(firstName, "i") },
+          { lastName: new RegExp(lastName, "i") }
+        ];
+      }
     }
 
     // === APPLY BATTING FILTERS ===
@@ -1190,7 +1211,13 @@ export const getUncommittedPLayer = async (req, res) => {
     const totalPlayers = await User.countDocuments(filter);
     const players = await User.find(filter).populate("team").skip(skip).limit(parseInt(limit)).sort({ createdAt: -1 });
     if (!players?.length) {
-      return res.status(400).json({ message: "No uncommitted players found" });
+      if(name){
+        return res.status(400).json({ message: "No uncommitted players found with this name" });
+      } else if(seasonYear){
+        return res.status(400).json({ message: "No uncommitted players found with this year" });
+      } else {
+        return res.status(400).json({ message: "No uncommitted players found" });
+      }
     }
 
     // NORMALIZE SEASON YEAR FOR FILTERING
@@ -1238,6 +1265,10 @@ export const getUncommittedPLayer = async (req, res) => {
 
     // CHECK IF NO PLAYERS AFTER FILTERING
     if (formattedPlayers.length === 0) {
+      const seasonStartYear = parseInt(seasonYear);
+      const seasonEndYear = (seasonStartYear + 1).toString().slice(-2);
+      const seasonLabel = `${seasonStartYear}-${seasonEndYear}`;
+
       return res.status(400).json({ 
         message: `No players found with stats for season year ${seasonYear}`,
         formattedPlayers,
