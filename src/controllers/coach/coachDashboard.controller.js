@@ -736,7 +736,7 @@ export const followUser = async (req, res) => {
     // Check if user exists
     const userToFollow = await User.findById(userId);
     if (!userToFollow) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(400).json({ message: "User not found" });
     }
 
     // Prevent self-following
@@ -791,7 +791,7 @@ export const unfollowUser = async (req, res) => {
     });
 
     if (!follow) {
-      return res.status(404).json({ message: "Not following this user" });
+      return res.status(400).json({ message: "Not following this user" });
     }
 
     res.json({
@@ -969,7 +969,7 @@ export const followTeam = async (req, res) => {
     // Check if team exists
     const team = await Team.findById(teamId);
     if (!team) {
-      return res.status(404).json({ message: "Team not found" });
+      return res.status(400).json({ message: "Team not found" });
     }
 
     // Check if team is active
@@ -1025,7 +1025,7 @@ export const unfollowTeam = async (req, res) => {
     });
 
     if (!followTeam) {
-      return res.status(404).json({ message: "Not following this team" });
+      return res.status(400).json({ message: "Not following this team" });
     }
 
     res.json({

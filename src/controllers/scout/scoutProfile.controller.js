@@ -149,7 +149,7 @@ export const deleteScoutProfileImage = async (req, res) => {
     }
 
     if (!scout.profileImage) {
-      return res.status(404).json({ message: "No profile image found" });
+      return res.status(400).json({ message: "No profile image found" });
     }
 
     // Don't delete if it's an external URL
@@ -295,7 +295,7 @@ export const forgotPassword = async (req, res) => {
     const scout = await User.findOne({ email: email.toLowerCase(), role: "scout" });
     
     if (!scout) {
-      return res.status(404).json({ 
+      return res.status(400).json({ 
         message: "No scout account found with this email address" 
       });
     }
@@ -339,7 +339,7 @@ export const verifyOtp = async (req, res) => {
     });
 
     if (!scout) {
-      return res.status(404).json({ 
+      return res.status(400).json({ 
         message: "No scout account found with this email address" 
       });
     }

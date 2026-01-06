@@ -103,6 +103,41 @@ const formatPlayerData = (player, baseURL) => {
   return playerData;
 };
 
+/**
+ * Helper function to normalize season year
+ * Converts: 2024 -> 2024, 2024-25 -> 2024, 2017-18 -> 2017
+ */
+const normalizeSeasonYear = (seasonYear) => {
+  if (!seasonYear) return null;
+  
+  // If it's already a simple year like "2024"
+  if (/^\d{4}$/.test(seasonYear)) {
+    return seasonYear;
+  }
+  
+  // If it's a range like "2024-25" or "2017-18", extract first year
+  const match = seasonYear.match(/^(\d{4})-\d{2}$/);
+  if (match) {
+    return match[1];
+  }
+  
+  return seasonYear;
+};
+
+/**
+ * Filter stats array by season year
+ */
+const filterStatsByYear = (statsArray, targetYear) => {
+  if (!targetYear || !statsArray || statsArray.length === 0) {
+    return statsArray;
+  }
+
+  return statsArray.filter(stat => {
+    const statYear = normalizeSeasonYear(stat.seasonYear);
+    return statYear === targetYear;
+  });
+};
+
 // Get player profile
 export const getPlayerProfile = async (req, res) => {
   try {
@@ -111,7 +146,7 @@ export const getPlayerProfile = async (req, res) => {
     const player = await User.findById(playerId).populate('team').select("-password");
     
     if (!player || player.role !== "player") {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     const baseURL = `${req.protocol}://${req.get("host")}`;
@@ -147,7 +182,7 @@ export const updatePlayerProfile = async (req, res) => {
     const player = await User.findById(playerId);
     
     if (!player || player.role !== "player") {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     // Update fields
@@ -205,7 +240,7 @@ export const uploadPlayerVideos = async (req, res) => {
     const player = await User.findById(playerId);
     
     if (!player || player.role !== "player") {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     // Limit to 2 videos total
@@ -260,11 +295,11 @@ export const deletePlayerVideo = async (req, res) => {
     const player = await User.findById(playerId);
     
     if (!player || player.role !== "player") {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     if (!player.videos || player.videos.length === 0) {
-      return res.status(404).json({ message: "No videos found" });
+      return res.status(400).json({ message: "No videos found" });
     }
 
     // Find video by _id
@@ -273,7 +308,7 @@ export const deletePlayerVideo = async (req, res) => {
     );
 
     if (videoIndex === -1) {
-      return res.status(404).json({ message: "Video not found" });
+      return res.status(400).json({ message: "Video not found" });
     }
 
     const videoUrl = player.videos[videoIndex].url;
@@ -328,7 +363,7 @@ export const uploadCoachRecommendation = async (req, res) => {
     const player = await User.findById(playerId);
     
     if (!player || player.role !== "player") {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     // Delete old recommendation if exists
@@ -378,11 +413,11 @@ export const deleteCoachRecommendation = async (req, res) => {
     const player = await User.findById(playerId);
     
     if (!player || player.role !== "player") {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     if (!player.coachRecommendation || !player.coachRecommendation.url) {
-      return res.status(404).json({ message: "No recommendation found" });
+      return res.status(400).json({ message: "No recommendation found" });
     }
 
     // Delete file from filesystem
@@ -426,7 +461,7 @@ export const uploadAcademicInfo = async (req, res) => {
     const player = await User.findById(playerId);
     
     if (!player || player.role !== "player") {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     // Delete old recommendation if exists
@@ -471,11 +506,11 @@ export const deleteAcademicInfo = async (req, res) => {
     const player = await User.findById(playerId);
     
     if (!player || player.role !== "player") {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     if (!player.acedemicInfo || !player.acedemicInfo.url) {
-      return res.status(404).json({ message: "No Acedemic Information found" });
+      return res.status(400).json({ message: "No Acedemic Information found" });
     }
 
     // Delete file from filesystem
@@ -516,7 +551,7 @@ export const addAward = async (req, res) => {
     const player = await User.findById(playerId);
     
     if (!player || player.role !== "player") {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     if (!player.awardsAchievements) player.awardsAchievements = [];
@@ -554,11 +589,11 @@ export const removeAward = async (req, res) => {
     const player = await User.findById(playerId);
     
     if (!player || player.role !== "player") {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     if (!player.awardsAchievements || player.awardsAchievements.length === 0) {
-      return res.status(404).json({ message: "No awards found" });
+      return res.status(400).json({ message: "No awards found" });
     }
 
     player.awardsAchievements = player.awardsAchievements.filter(a => a !== award);
@@ -594,7 +629,7 @@ export const addStrength = async (req, res) => {
     const player = await User.findById(playerId);
     
     if (!player || player.role !== "player") {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     if (!player.strengths) player.strengths = [];
@@ -630,11 +665,11 @@ export const removeStrength = async (req, res) => {
     const player = await User.findById(playerId);
     
     if (!player || player.role !== "player") {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     if (!player.strengths || player.strengths.length === 0) {
-      return res.status(404).json({ message: "No strengths found" });
+      return res.status(400).json({ message: "No strengths found" });
     }
 
     player.strengths = player.strengths.filter(s => s !== strength);
@@ -666,7 +701,7 @@ export const updatePlayerProfileImage = async (req, res) => {
     const player = await User.findById(playerId);
     
     if (!player || player.role !== "player") {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     // Delete old profile image if exists
@@ -709,11 +744,11 @@ export const deletePlayerProfileImage = async (req, res) => {
     const player = await User.findById(playerId);
     
     if (!player || player.role !== "player") {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     if (!player.profileImage) {
-      return res.status(404).json({ message: "No profile image found" });
+      return res.status(400).json({ message: "No profile image found" });
     }
 
     // Don't delete if it's an external URL (from CSV import)
@@ -759,7 +794,7 @@ export const getPlayerById = async (req, res) => {
     const player = await User.findOne({ _id: playerId, role: "player" }).populate('team', 'name logo location division region rank coachName home away neutral conference');
 
     if (!player) {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     // Format data
@@ -806,60 +841,15 @@ export const getPlayerById = async (req, res) => {
   }
 };
 
-// Get Uncommitted Tracker (Players)
-export const getUncommittedPLayerOLDWITHOUTFILTER = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-    const filter = {
-      role: "player",
-      $or: [ { team: { $exists: false } }, { team: null } ]
-    };
-
-    const totalPlayers = await User.countDocuments(filter);
-    const players = await User.find(filter).populate("team", "name logo location division region rank coachName home away neutral conference").skip(skip).limit(limit).sort({ createdAt: -1 });
-    if (!players?.length) {
-      return res.status(404).json({ message: "No uncommitted players found" });
-    }
-
-    const baseURL = `${req.protocol}://${req.get("host")}`;
-    const formattedPlayers = players.map(player => {
-      const data = player.toObject();
-      if (data.profileImage && !data.profileImage.startsWith("http")) {
-        data.profileImage = `${baseURL}${data.profileImage}`;
-      }
-
-      if (data.team?.logo && !data.team.logo.startsWith("http")) {
-        data.team.logo = `${baseURL}${data.team.logo}`;
-      }
-
-      delete data.password;
-      delete data.photoIdDocuments;
-      return data;
-    });
-
-    res.json({
-      message: "Uncommitted players retrieved successfully",
-      currentPage: page,
-      totalPages: Math.ceil(totalPlayers / limit),
-      totalPlayers,
-      limit,
-      players: formattedPlayers
-    });
-
-  } catch (error) {
-    console.error("Get Uncommitted Players Error:", error);
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Get Uncommitted Tracker (Players) With Filters
+// GET UNCOMMITTED PLAYERS WITH FILTERS AND PAGINATION
 export const getUncommittedPLayer = async (req, res) => {
   try {
     const {
       page = 1,
       limit = 10,
+      
+      // === SEASON YEAR FILTER ===
+      seasonYear,
       
       // === BATTING FILTERS ===
       batting_average_min,
@@ -1179,7 +1169,7 @@ export const getUncommittedPLayer = async (req, res) => {
     if (assists_min || assists_max) {
       filter['fieldingStats.0.assists'] = {};
       if (assists_min) {
-        filter['fieldingStats.0.assists'].$gte = parseInt(assists_min);
+        filter['battingStats.0.assists'].$gte = parseInt(assists_min);
       }
       if (assists_max) {
         filter['fieldingStats.0.assists'].$lte = parseInt(assists_max);
@@ -1198,33 +1188,68 @@ export const getUncommittedPLayer = async (req, res) => {
 
     // === COUNT AND FETCH PLAYERS ===
     const totalPlayers = await User.countDocuments(filter);
-    const players = await User.find(filter)
-      .populate("team")
-      .skip(skip)
-      .limit(parseInt(limit))
-      .sort({ createdAt: -1 });
-
+    const players = await User.find(filter).populate("team").skip(skip).limit(parseInt(limit)).sort({ createdAt: -1 });
     if (!players?.length) {
-      return res.status(404).json({ message: "No uncommitted players found" });
+      return res.status(400).json({ message: "No uncommitted players found" });
     }
+
+    // NORMALIZE SEASON YEAR FOR FILTERING
+    const normalizedYear = seasonYear ? normalizeSeasonYear(seasonYear) : null;
 
     // Format players
     const baseURL = `${req.protocol}://${req.get("host")}`;
-    const formattedPlayers = players.map(player => {
-      const data = player.toObject();
-      
-      if (data.profileImage && !data.profileImage.startsWith("http")) {
-        data.profileImage = `${baseURL}${data.profileImage}`;
-      }
+    const formattedPlayers = players
+      .map(player => {
+        const data = player.toObject();
+        
+        // FILTER STATS BY SEASON YEAR
+        if (normalizedYear) {
+          data.battingStats = filterStatsByYear(data.battingStats, normalizedYear);
+          data.fieldingStats = filterStatsByYear(data.fieldingStats, normalizedYear);
+          data.pitchingStats = filterStatsByYear(data.pitchingStats, normalizedYear);
+        }
+        
+        if (data.profileImage && !data.profileImage.startsWith("http")) {
+          data.profileImage = `${baseURL}${data.profileImage}`;
+        }
 
-      if (data.team?.logo && !data.team.logo.startsWith("http")) {
-        data.team.logo = `${baseURL}${data.team.logo}`;
-      }
+        if (data.team?.logo && !data.team.logo.startsWith("http")) {
+          data.team.logo = `${baseURL}${data.team.logo}`;
+        }
 
-      delete data.password;
-      delete data.photoIdDocuments;
-      return data;
-    });
+        delete data.password;
+        delete data.photoIdDocuments;
+        return data;
+      })
+      // FILTER OUT PLAYERS WITH NO STATS FOR THE REQUESTED YEAR
+      .filter(player => {
+        // If no seasonYear filter, keep all players
+        if (!normalizedYear) {
+          return true;
+        }
+        
+        // If seasonYear filter is applied, only keep players who have at least one stat for that year
+        const hasBattingStats = player.battingStats && player.battingStats.length > 0;
+        const hasFieldingStats = player.fieldingStats && player.fieldingStats.length > 0;
+        const hasPitchingStats = player.pitchingStats && player.pitchingStats.length > 0;
+        
+        return hasBattingStats || hasFieldingStats || hasPitchingStats;
+      });
+
+    // CHECK IF NO PLAYERS AFTER FILTERING
+    if (formattedPlayers.length === 0) {
+      return res.status(400).json({ 
+        message: `No players found with stats for season year ${seasonYear}`,
+        formattedPlayers,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(formattedPlayers / parseInt(limit)),
+          formattedPlayers,
+          limit: parseInt(limit),
+          hasMore: skip + formattedPlayers.length < formattedPlayers.length
+        }
+      });
+    }
 
     res.json({
       message: "Uncommitted players retrieved successfully",

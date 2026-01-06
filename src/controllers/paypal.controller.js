@@ -147,7 +147,7 @@ export const createPayPalSubscriptionOLLLDDDDINDEXISSUE = async (req, res) => {
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "User not found"
       });
@@ -250,7 +250,7 @@ export const createPayPalSubscription = async (req, res) => {
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "User not found"
       });
@@ -496,7 +496,7 @@ export const cancelPayPalSubscriptionOLLLLDDDDDD = async (req, res) => {
     });
 
     if (!subscription) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "No active PayPal subscription found"
       });
@@ -562,7 +562,7 @@ export const cancelPayPalSubscription = async (req, res) => {
     }).sort({ createdAt: -1 }); // Get most recent
 
     if (!subscription) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "No PayPal subscription found"
       });
@@ -576,7 +576,7 @@ export const cancelPayPalSubscription = async (req, res) => {
         { method: 'GET' }
       );
     } catch (error) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Subscription not found in PayPal",
         error: error.message

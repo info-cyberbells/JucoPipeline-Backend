@@ -31,7 +31,7 @@ export const createCoachNote = async (req, res) => {
     // Verify player exists and is a player
     const player = await User.findById(playerId);
     if (!player) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Player not found"
       });
@@ -160,7 +160,7 @@ export const getNotesForPlayer = async (req, res) => {
     // Verify player exists
     const player = await User.findById(playerId);
     if (!player || player.role !== 'player') {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Player not found"
       });
@@ -213,7 +213,7 @@ export const getSingleNote = async (req, res) => {
       .populate('player', 'firstName lastName jerseyNumber position team profileImage');
 
     if (!note) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Note not found"
       });
@@ -264,7 +264,7 @@ export const updateCoachNote = async (req, res) => {
     const note = await CoachNote.findById(noteId);
 
     if (!note) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Note not found"
       });
@@ -330,7 +330,7 @@ export const deleteCoachNote = async (req, res) => {
     const note = await CoachNote.findById(noteId);
 
     if (!note) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Note not found"
       });

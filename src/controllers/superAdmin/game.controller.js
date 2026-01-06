@@ -27,7 +27,7 @@ export const createGame = async (req, res) => {
       // Check if team exists
       const teamExists = await Team.findById(homeTeamId);
       if (!teamExists) {
-        return res.status(404).json({ message: "homeTeamId not found" });
+        return res.status(400).json({ message: "homeTeamId not found" });
       }
     }
 
@@ -40,7 +40,7 @@ export const createGame = async (req, res) => {
       // Check if team exists
       const teamExists = await Team.findById(awayTeamId);
       if (!teamExists) {
-        return res.status(404).json({ message: "awayTeamId not found" });
+        return res.status(400).json({ message: "awayTeamId not found" });
       }
     }
 
@@ -222,7 +222,7 @@ export const getGameById = async (req, res) => {
       .populate('awayTeamId', 'name logo');
 
     if (!game) {
-      return res.status(404).json({ message: "Game not found" });
+      return res.status(400).json({ message: "Game not found" });
     }
 
     res.json({
@@ -249,7 +249,7 @@ export const updateGame = async (req, res) => {
 
     const game = await Game.findById(gameId);
     if (!game) {
-      return res.status(404).json({ message: "Game not found" });
+      return res.status(400).json({ message: "Game not found" });
     }
 
     // Validate and update homeTeamId
@@ -260,7 +260,7 @@ export const updateGame = async (req, res) => {
 
       const teamExists = await Team.findById(homeTeamId);
       if (!teamExists) {
-        return res.status(404).json({ message: "homeTeamId not found" });
+        return res.status(400).json({ message: "homeTeamId not found" });
       }
 
       game.homeTeamId = homeTeamId;
@@ -274,7 +274,7 @@ export const updateGame = async (req, res) => {
 
       const teamExists = await Team.findById(awayTeamId);
       if (!teamExists) {
-        return res.status(404).json({ message: "awayTeamId not found" });
+        return res.status(400).json({ message: "awayTeamId not found" });
       }
 
       game.awayTeamId = awayTeamId;
@@ -334,7 +334,7 @@ export const deleteGame = async (req, res) => {
     const game = await Game.findByIdAndDelete(gameId);
     
     if (!game) {
-      return res.status(404).json({ message: "Game not found" });
+      return res.status(400).json({ message: "Game not found" });
     }
 
     res.json({
@@ -432,7 +432,7 @@ export const updateGameStatus = async (req, res) => {
     const game = await Game.findById(gameId);
 
     if (!game) {
-      return res.status(404).json({ message: "Game not found" });
+      return res.status(400).json({ message: "Game not found" });
     }
 
     // Update status

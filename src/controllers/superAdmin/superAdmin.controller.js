@@ -134,7 +134,7 @@ export const getUserDetails = async (req, res) => {
     const user = await User.findById(userId).populate("team", "name").select("-password");
     
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(400).json({ message: "User not found" });
     }
 
     const baseURL = `${req.protocol}://${req.get("host")}`;
@@ -157,7 +157,7 @@ export const approveUserOLDDDFUNCATION = async (req, res) => {
     
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(400).json({ message: "User not found" });
     }
 
     if (user.registrationStatus === "approved") {
@@ -193,7 +193,7 @@ export const approveUser = async (req, res) => {
     // Find user
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(400).json({ message: "User not found" });
     }
 
     // Check if already approved
@@ -252,7 +252,7 @@ export const rejectUserOLLDDDDD = async (req, res) => {
     const user = await User.findById(userId);
     
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(400).json({ message: "User not found" });
     }
 
     if (user.registrationStatus === "rejected") {
@@ -287,7 +287,7 @@ export const rejectUser = async (req, res) => {
     
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(400).json({ message: "User not found" });
     }
 
     if (user.registrationStatus === "rejected") {

@@ -9,7 +9,7 @@ export const verifyVehicle = async (req, res) => {
     const { vehicleId } = req.params;
     const vehicle = await Vehicle.findById(vehicleId);
     if (!vehicle) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Vehicle not found",
       });
@@ -70,7 +70,7 @@ export const updateDriverStatus = async (req, res) => {
     const user = await User.findById(id);
 
     if (!user || user.role !== "driver") {
-      return res.status(404).json({ message: "Driver not found" });
+      return res.status(400).json({ message: "Driver not found" });
     }
 
     // Check for duplicate actions

@@ -120,7 +120,7 @@ export const getScrapeJobById = async (req, res) => {
       .select("-password -photoIdDocuments");
 
     if (!player) {
-      return res.status(404).json({ message: "Scrape job not found" });
+      return res.status(400).json({ message: "Scrape job not found" });
     }
 
     const baseURL = `${req.protocol}://${req.get("host")}`;
@@ -174,7 +174,7 @@ export const deleteScrapeJob = async (req, res) => {
     const player = await User.findByIdAndDelete(jobId);
 
     if (!player) {
-      return res.status(404).json({ message: "Scrape job not found" });
+      return res.status(400).json({ message: "Scrape job not found" });
     }
 
     res.json({
@@ -254,7 +254,7 @@ export const updateScrapeJob = async (req, res) => {
     ).populate('team', 'name logo location division');
 
     if (!player) {
-      return res.status(404).json({ message: "Scrape job not found" });
+      return res.status(400).json({ message: "Scrape job not found" });
     }
 
     const baseURL = `${req.protocol}://${req.get("host")}`;

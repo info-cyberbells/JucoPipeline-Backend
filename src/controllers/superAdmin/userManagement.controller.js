@@ -104,7 +104,7 @@ export const getUserById = async (req, res) => {
       .populate('manualEditBy', 'firstName lastName email role');
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(400).json({ message: "User not found" });
     }
 
     const baseURL = `${req.protocol}://${req.get("host")}`;
@@ -144,7 +144,7 @@ export const updateUser = async (req, res) => {
     const user = await User.findById(userId);
     
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(400).json({ message: "User not found" });
     }
 
     // Prevent role escalation to superAdmin
@@ -226,7 +226,7 @@ export const updateUserStatus = async (req, res) => {
     const user = await User.findById(userId);
     
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(400).json({ message: "User not found" });
     }
 
     user.isActive = isActive;
@@ -262,7 +262,7 @@ export const deleteUser = async (req, res) => {
     const user = await User.findById(userId);
     
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(400).json({ message: "User not found" });
     }
 
     // Prevent deleting superAdmin

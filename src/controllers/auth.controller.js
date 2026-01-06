@@ -95,7 +95,7 @@ export const registerPlayer = async (req, res) => {
 
       const teamExists = await Team.findById(teamId);
       if (!teamExists) {
-        return res.status(404).json({ message: "Team not found" });
+        return res.status(400).json({ message: "Team not found" });
       }
     }
 
@@ -229,7 +229,7 @@ export const getTeamById = async (req, res) => {
     // Check if team exists
     const team = await Team.findById(teamId);
     if (!team) {
-      return res.status(404).json({ message: "Team not found" });
+      return res.status(400).json({ message: "Team not found" });
     }
 
     // Simple filter - only team and role
@@ -459,7 +459,7 @@ export const approvePlayer = async (req, res) => {
 
     const player = await User.findById(playerId);
     if (!player || player.role !== "player") {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     if (player.registrationStatus === "approved") {
@@ -494,7 +494,7 @@ export const rejectPlayer = async (req, res) => {
 
     const player = await User.findById(playerId);
     if (!player || player.role !== "player") {
-      return res.status(404).json({ message: "Player not found" });
+      return res.status(400).json({ message: "Player not found" });
     }
 
     player.registrationStatus = "rejected";
@@ -1194,7 +1194,7 @@ export const verifyRegistrationStatus = async (req, res) => {
     const pendingReg = await PendingRegistration.findById(pendingRegistrationId);
 
     if (!pendingReg) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Pending registration not found or expired"
       });
@@ -1513,7 +1513,7 @@ export const forgotPassword = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user)
-      return res.status(404).json({ success: false, message: "Email not found" });
+      return res.status(400).json({ success: false, message: "Email not found" });
 
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString("hex");

@@ -697,7 +697,7 @@ export const followUser = async (req, res) => {
     // Check if user exists
     const userToFollow = await User.findById(userId);
     if (!userToFollow) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(400).json({ message: "User not found" });
     }
 
     // Prevent self-following
@@ -752,7 +752,7 @@ export const unfollowUser = async (req, res) => {
     });
 
     if (!follow) {
-      return res.status(404).json({ message: "Not following this user" });
+      return res.status(400).json({ message: "Not following this user" });
     }
 
     res.json({

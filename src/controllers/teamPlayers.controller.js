@@ -107,7 +107,7 @@ export const getTeamById = async (req, res) => {
     const team = await Team.findById(teamId);
 
     if (!team) {
-      return res.status(404).json({ message: "Team not found" });
+      return res.status(400).json({ message: "Team not found" });
     }
 
     const baseURL = `${req.protocol}://${req.get("host")}`;
@@ -153,7 +153,7 @@ export const getPlayersByTeam = async (req, res) => {
     // Check if team exists
     const team = await Team.findById(teamId);
     if (!team) {
-      return res.status(404).json({ message: "Team not found" });
+      return res.status(400).json({ message: "Team not found" });
     }
 
     // Build filter
@@ -282,7 +282,7 @@ export const getTeamStatistics = async (req, res) => {
 
     const team = await Team.findById(teamId);
     if (!team) {
-      return res.status(404).json({ message: "Team not found" });
+      return res.status(400).json({ message: "Team not found" });
     }
 
     // Get all players

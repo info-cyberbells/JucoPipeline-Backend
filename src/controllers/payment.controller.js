@@ -103,7 +103,7 @@ export const createCheckoutSession = async (req, res) => {
     // Get user from YOUR database
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "User not found"
       });
@@ -268,7 +268,7 @@ export const cancelSubscription = async (req, res) => {
     const user = await User.findById(userId);
 
     if (!user || !user.outsetaAccountUid) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "No subscription found"
       });
@@ -280,7 +280,7 @@ export const cancelSubscription = async (req, res) => {
     );
 
     if (!activeSubscription) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "No active subscription to cancel"
       });
@@ -330,7 +330,7 @@ export const reactivateSubscription = async (req, res) => {
     const user = await User.findById(userId);
 
     if (!user || !user.outsetaAccountUid) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "No subscription found"
       });
@@ -342,7 +342,7 @@ export const reactivateSubscription = async (req, res) => {
     );
 
     if (!canceledSubscription) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "No canceled subscription found to reactivate"
       });
@@ -534,7 +534,7 @@ export const updatePaymentMethod = async (req, res) => {
     const user = await User.findById(userId);
 
     if (!user || !user.outsetaAccountUid) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "No account found"
       });

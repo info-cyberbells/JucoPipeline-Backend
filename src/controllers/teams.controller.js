@@ -68,7 +68,7 @@ export const getTeamRosterOLLLLDDDDD = async (req, res) => {
 
     const team = await Team.findById(teamId);
     if (!team) {
-      return res.status(404).json({ message: "Team not found" });
+      return res.status(400).json({ message: "Team not found" });
     }
 
     const baseURL = `${req.protocol}://${req.get("host")}`;
@@ -171,7 +171,7 @@ export const getTeamRosterOLLLLDDDDD = async (req, res) => {
 };
 
 // GET TEAM ROSTER
-export const getTeamRoster = async (req, res) => {
+export const getTeamRosterBKKK = async (req, res) => {
   // try {
     const coachId = req.user.id;
     const { teamId } = req.params;
@@ -291,6 +291,151 @@ export const getTeamRoster = async (req, res) => {
   // }
 };
 
+export const getTeamRoster = async (req, res) => {
+  try {
+    const coachId = req.user.id;
+    const { teamId } = req.params;
+    const {
+      page = 1,
+      limit = 10,
+      position,
+      seasonYear,
+      sortBy = "firstName",
+      sortOrder = "asc",
+      search
+    } = req.query;
+
+    if (!mongoose.Types.ObjectId.isValid(teamId)) {
+      return res.status(400).json({ message: "Invalid team ID" });
+    }
+
+    const baseURL = `${req.protocol}://${req.get("host")}`;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const baseYear = normalizeSeasonYear(seasonYear);
+
+    const matchStage = {
+      role: "player",
+      team: new mongoose.Types.ObjectId(teamId),
+      registrationStatus: "approved",
+      isActive: true
+    };
+
+    if (position && position !== "all") {
+      matchStage.position = { $regex: position, $options: "i" };
+    }
+
+    if (search) {
+      matchStage.$or = [
+        { firstName: { $regex: search, $options: "i" } },
+        { lastName: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    if (seasonYear && seasonYear !== "all") {
+      matchStage.$and = [
+        { battingStats: { $elemMatch: { seasonYear: { $regex: `^${baseYear}` } } } },
+        { fieldingStats: { $elemMatch: { seasonYear: { $regex: `^${baseYear}` } } } },
+        { pitchingStats: { $elemMatch: { seasonYear: { $regex: `^${baseYear}` } } } }
+      ];
+    }
+
+    const pipeline = [
+      { $match: matchStage },
+
+      // LOOKUP TEAM DATA
+      {
+        $lookup: {
+          from: "teams", // Collection name (usually plural and lowercase)
+          localField: "team",
+          foreignField: "_id",
+          as: "team"
+        }
+      },
+
+      // UNWIND TEAM DATA (convert array to object)
+      {
+        $unwind: {
+          path: "$team",
+          preserveNullAndEmptyArrays: true // Keep players even if team not found
+        }
+      },
+
+      // Filter stats by season
+      {
+        $addFields: {
+          battingStats: {
+            $filter: {
+              input: "$battingStats",
+              as: "stat",
+              cond: { $regexMatch: { input: "$$stat.seasonYear", regex: `^${baseYear}` } }
+            }
+          },
+          fieldingStats: {
+            $filter: {
+              input: "$fieldingStats",
+              as: "stat",
+              cond: { $regexMatch: { input: "$$stat.seasonYear", regex: `^${baseYear}` } }
+            }
+          },
+          pitchingStats: {
+            $filter: {
+              input: "$pitchingStats",
+              as: "stat",
+              cond: { $regexMatch: { input: "$$stat.seasonYear", regex: `^${baseYear}` } }
+            }
+          }
+        }
+      },
+
+      { $sort: { [sortBy]: sortOrder === "asc" ? 1 : -1 } },
+      { $skip: skip },
+      { $limit: parseInt(limit) }
+    ];
+
+    const [players, totalCount] = await Promise.all([
+      User.aggregate(pipeline),
+      User.countDocuments(matchStage)
+    ]);
+
+    // Get followed players
+    const playerIds = players.map(p => p._id);
+    const followedPlayers = await Follow.find({
+      follower: coachId,
+      following: { $in: playerIds }
+    }).distinct("following");
+
+    const followedSet = new Set(followedPlayers.map(id => id.toString()));
+
+    // Format players with team data
+    const formattedPlayers = players.map(player => {
+      const playerData = formatPlayerData(player, baseURL);
+      return {
+        ...playerData,
+        isFollowing: followedSet.has(player._id.toString()),
+      };
+    });
+
+    // GET TEAM INFO (for response metadata)
+    const teamInfo = players.length > 0 && players[0].team ? players[0].team : null;
+
+    res.json({
+      message: "Team roster retrieved successfully",
+      team: teamInfo, // Team information
+      players: formattedPlayers,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalCount / limit),
+        totalCount,
+        limit: parseInt(limit),
+        hasMore: skip + formattedPlayers.length < totalCount
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching team roster:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // GET ALL TEAMS 
 export const getAllTeamsWithoutPagination = async (req, res) => {
@@ -521,7 +666,7 @@ export const getTeamById = async (req, res) => {
     const team = await Team.findById(teamId);
 
     if (!team) {
-      return res.status(404).json({ message: "Team not found" });
+      return res.status(400).json({ message: "Team not found" });
     }
 
     const playerCount = await User.countDocuments({
@@ -562,7 +707,7 @@ export const getTeamDetails = async (req, res) => {
       .populate('topPerformer.playerId', 'firstName lastName position profileImage');
 
     if (!team) {
-      return res.status(404).json({ message: "Team not found" });
+      return res.status(400).json({ message: "Team not found" });
     }
 
     const baseURL = `${req.protocol}://${req.get("host")}`;
@@ -593,7 +738,7 @@ export const getTeamStats = async (req, res) => {
     const team = await Team.findById(teamId);
 
     if (!team) {
-      return res.status(404).json({ message: "Team not found" });
+      return res.status(400).json({ message: "Team not found" });
     }
 
     const players = await User.find({
@@ -604,7 +749,7 @@ export const getTeamStats = async (req, res) => {
     }).select("firstName lastName battingStats pitchingStats fieldingStats");
 
     if (players.length === 0) {
-      return res.status(404).json({ message: "No players found for this team" });
+      return res.status(400).json({ message: "No players found for this team" });
     }
 
     let totalHits = 0;

@@ -17,7 +17,7 @@ export const getProfile = async (req, res) => {
     
     const user = await User.findById(userId).select("-password -social_token");
     if (!user) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "User not found",
       });
@@ -106,7 +106,7 @@ export const updateProfile = async (req, res) => {
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res.status(400).json({ success: false, message: "User not found" });
     }
 
     const role = user.role?.toLowerCase();
@@ -305,7 +305,7 @@ export const changePassword = async (req, res) => {
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "User not found",
       });
@@ -345,7 +345,7 @@ export const deleteProfileImage = async (req, res) => {
     
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "User not found",
       });
