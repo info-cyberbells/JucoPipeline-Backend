@@ -908,7 +908,8 @@ export const getUncommittedPLayer = async (req, res) => {
       double_plays_max,
 
       commitmentStatus,
-      name
+      name,
+      position
     } = req.query;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -1207,6 +1208,11 @@ export const getUncommittedPLayer = async (req, res) => {
         filter['fieldingStats.0.double_plays'].$lte = parseInt(double_plays_max);
       }
     }
+
+    if (position && position !== "all") {
+      filter.position = { $regex: position, $options: "i" };
+    }
+
 
     // === COUNT AND FETCH PLAYERS ===
     const totalPlayers = await User.countDocuments(filter);
