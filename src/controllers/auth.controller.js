@@ -19,19 +19,19 @@ const getBaseURL = (req) => `${req.protocol}://${req.get("host")}`;
 // Helper function to format user data
 const formatUserData = (user, baseURL) => {
   const userData = user.toObject();
-  
+
   // Format profile image
   if (userData.profileImage && !userData.profileImage.startsWith("http")) {
     userData.profileImage = `${baseURL}${userData.profileImage}`;
   }
-  
+
   // Format photoIdDocument (single object)
   if (userData.photoIdDocument && userData.photoIdDocument.documentUrl) {
     if (!userData.photoIdDocument.documentUrl.startsWith("http")) {
       userData.photoIdDocument.documentUrl = `${baseURL}${userData.photoIdDocument.documentUrl}`;
     }
   }
-  
+
   // Format photoIdDocuments array (if keeping for history)
   if (userData.photoIdDocuments && userData.photoIdDocuments.length > 0) {
     userData.photoIdDocuments = userData.photoIdDocuments.map(doc => ({
@@ -39,7 +39,7 @@ const formatUserData = (user, baseURL) => {
       documentUrl: doc.documentUrl.startsWith("http") ? doc.documentUrl : `${baseURL}${doc.documentUrl}`
     }));
   }
-  
+
   delete userData.password;
   return userData;
 };
@@ -56,9 +56,9 @@ export const getUSStates = async (req, res) => {
       data: usStates
     });
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: error.message 
+      message: error.message
     });
   }
 };
@@ -70,8 +70,8 @@ export const registerPlayer = async (req, res) => {
 
     // Validate required fields
     if (!firstName || !lastName) {
-      return res.status(400).json({ 
-        message: "First name and last name are required" 
+      return res.status(400).json({
+        message: "First name and last name are required"
       });
     }
 
@@ -128,7 +128,7 @@ export const registerPlayer = async (req, res) => {
       existingPlayer.phoneNumber = phoneNumber || existingPlayer.phoneNumber;
       existingPlayer.registrationStatus = "inProgress";
       existingPlayer.photoIdDocument = photoIdDocumentData;
-      
+
       if (teamId) {
         existingPlayer.team = teamId;
       }
@@ -190,7 +190,7 @@ export const getTeams = async (req, res) => {
         });
 
         const teamData = team.toObject();
-        
+
         // Format logo URL
         if (teamData.logo && !teamData.logo.startsWith("http")) {
           teamData.logo = `${baseURL}${teamData.logo}`;
@@ -253,7 +253,7 @@ export const getTeamById = async (req, res) => {
     // Format players with minimal data
     const formattedPlayers = players.map(player => {
       const userData = player.toObject();
-      
+
       // Format profile image
       if (userData.profileImage && !userData.profileImage.startsWith("http")) {
         userData.profileImage = `${baseURL}${userData.profileImage}`;
@@ -578,10 +578,10 @@ export const register = async (req, res) => {
 // ============================================
 export const registerWithPaymentOLLDDDDD = async (req, res) => {
   const session = await mongoose.startSession();
-  
+
   try {
     await session.startTransaction();
-    const {firstName,lastName,email,password,role,teamId,jobTitle,school,division,conference,state,paymentProvider,plan} = req.body;
+    const { firstName, lastName, email, password, role, teamId, jobTitle, school, division, conference, state, paymentProvider, plan } = req.body;
 
     // Validation
     if (!["scout", "coach"].includes(role)) {
@@ -655,7 +655,8 @@ export const registerWithPaymentOLLDDDDD = async (req, res) => {
       profileImage,
       paymentProvider,
       plan,
-      status: "pending_payment"};
+      status: "pending_payment"
+    };
 
     // Role-specific fields
     if (role === "scout") {
@@ -677,7 +678,7 @@ export const registerWithPaymentOLLDDDDD = async (req, res) => {
     // ============================================
     if (paymentProvider === "stripe") {
       const planConfig = SUBSCRIPTION_PLANS[plan];
-      
+
       if (!planConfig) {
         await session.abortTransaction();
         return res.status(400).json({
@@ -738,7 +739,7 @@ export const registerWithPaymentOLLDDDDD = async (req, res) => {
     // ============================================
     else if (paymentProvider === "paypal") {
       const planConfig = PAYPAL_SUBSCRIPTION_PLANS[plan];
-      
+
       if (!planConfig) {
         await session.abortTransaction();
         return res.status(400).json({
@@ -798,14 +799,14 @@ export const registerWithPaymentOLLDDDDD = async (req, res) => {
       paymentProvider,
       payment: paymentResponse,
       plan: {
-        name: paymentProvider === "stripe" 
-          ? SUBSCRIPTION_PLANS[plan].name 
+        name: paymentProvider === "stripe"
+          ? SUBSCRIPTION_PLANS[plan].name
           : PAYPAL_SUBSCRIPTION_PLANS[plan].name,
-        price: paymentProvider === "stripe" 
-          ? SUBSCRIPTION_PLANS[plan].price 
+        price: paymentProvider === "stripe"
+          ? SUBSCRIPTION_PLANS[plan].price
           : PAYPAL_SUBSCRIPTION_PLANS[plan].price,
-        interval: paymentProvider === "stripe" 
-          ? SUBSCRIPTION_PLANS[plan].interval 
+        interval: paymentProvider === "stripe"
+          ? SUBSCRIPTION_PLANS[plan].interval
           : PAYPAL_SUBSCRIPTION_PLANS[plan].interval
       }
     });
@@ -893,8 +894,8 @@ export const registerWithPaymentPAYMENT = async (req, res) => {
     // ============================================
     let planDetails;
     // try {
-      planDetails = await outseta.getPlan(plan);
-      console.log(`✅ Plan validated: ${planDetails.Name}`);
+    planDetails = await outseta.getPlan(plan);
+    console.log(`✅ Plan validated: ${planDetails.Name}`);
     // } catch (error) {
     //   return res.status(400).json({
     //     success: false,
@@ -903,8 +904,8 @@ export const registerWithPaymentPAYMENT = async (req, res) => {
     // }
 
     // Profile image
-    const profileImage = req.files?.profileImage 
-      ? `/uploads/profiles/${req.files.profileImage[0].filename}` 
+    const profileImage = req.files?.profileImage
+      ? `/uploads/profiles/${req.files.profileImage[0].filename}`
       : null;
 
     // ============================================
@@ -957,7 +958,7 @@ export const registerWithPaymentPAYMENT = async (req, res) => {
     } catch (error) {
       // Rollback: Delete pending registration
       await PendingRegistration.findByIdAndDelete(pendingReg._id);
-      
+
       console.error("Error creating Outseta person:", error);
       return res.status(500).json({
         success: false,
@@ -986,7 +987,7 @@ export const registerWithPaymentPAYMENT = async (req, res) => {
     } catch (error) {
       // Rollback: Delete pending registration and Outseta person
       await PendingRegistration.findByIdAndDelete(pendingReg._id);
-      
+
       console.error("Error creating checkout session:", error);
       return res.status(500).json({
         success: false,
@@ -1113,7 +1114,7 @@ export const registerWithPayment = async (req, res) => {
     //   });
     // }
 
-    
+
     // ===============================
     // Profile image
     // ===============================
@@ -1203,7 +1204,7 @@ export const verifyRegistrationStatus = async (req, res) => {
     // Check if already completed
     if (pendingReg.status === "completed") {
       const user = await User.findOne({ email: pendingReg.email });
-      
+
       return res.json({
         success: true,
         message: "Registration completed",
@@ -1628,5 +1629,60 @@ export const registerJucoCoachaMedia = async (req, res) => {
     })
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+
+
+
+
+
+
+
+
+
+export const uploadPublicUserVideos = async (req, res) => {
+  try {
+    const { userId } = req.body; 
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No videos uploaded"
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    const baseURL = `${req.protocol}://${req.get("host")}`;
+
+    const uploadedVideos = req.files.map(file => ({
+      url: `/${file.path.replace(/\\/g, "/")}`,
+      title: file.originalname,
+      uploadedAt: new Date(),
+      fileSize: file.size
+    }));
+
+    user.videos.push(...uploadedVideos);
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Videos uploaded successfully",
+      videos: uploadedVideos
+    });
+
+  } catch (error) {
+    console.error("Public upload videos error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
   }
 };

@@ -1,9 +1,9 @@
 import express from "express";
-import { getUSStates, register, login, logout, registerPlayer, loginPlayer, approvePlayer, rejectPlayer, getPendingPlayers, getTeams, getTeamById, registerWithPayment, verifyRegistrationStatus, registerJucoCoachaMedia } from "../controllers/auth.controller.js";
+import { getUSStates, register, login, logout, registerPlayer, loginPlayer, approvePlayer, rejectPlayer, getPendingPlayers, getTeams, getTeamById, registerWithPayment, verifyRegistrationStatus, registerJucoCoachaMedia, uploadPublicUserVideos } from "../controllers/auth.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { authorizeRoles } from "../middleware/role.middleware.js";
-import {validateRegister, validateLogin, validatePlayerRegister, validatePlayerLogin, validateRejectPlayer} from "../validation/auth.validation.js";
-import { uploadFiles } from "../middleware/upload.middleware.js";
+import { validateRegister, validateLogin, validatePlayerRegister, validatePlayerLogin, validateRejectPlayer } from "../validation/auth.validation.js";
+import { uploadFiles, uploadVideos } from "../middleware/upload.middleware.js";
 import { getUpcomingGames } from "../controllers/superAdmin/game.controller.js";
 // import { getAllTeams, getTeamById, getPlayersByTeam, getTeamStatistics, getTeamPositions } from "../controllers/teamPlayers.controller.js";
 import { handleOutsetaWebhook } from "../controllers/webhookHandler.controller.js";
@@ -50,6 +50,11 @@ router.post("/logout", authenticate, logout);
 
 // Public routes
 router.get("/games/upcoming", getUpcomingGames);
+
+
+
+router.post("/upload-videos", uploadVideos.array("videos"), uploadPublicUserVideos);
+
 
 
 
