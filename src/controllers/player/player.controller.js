@@ -923,16 +923,17 @@ export const getUncommittedPLayer = async (req, res) => {
     if (commitmentStatus) {
       filter.commitmentStatus = commitmentStatus; // committed | uncommitted
     }
-    console.log('name',name)
-    // === NAME SEARCH (firstName + lastName) ===
-    // if (name) {
-    //   const regex = new RegExp(name, "i");
-    //   console.log('regex',regex);
-    //   filter.$or = [
-    //     { firstName: regex },
-    //     { lastName: regex }
-    //   ];
-    // }
+
+    // === SEASON YEAR FILTER (CRITICAL FIX) ===
+    if (seasonYear && seasonYear !== "all") {
+      const normalizedYear = normalizeSeasonYear(seasonYear);
+
+      filter.$or = [
+        { battingStats: { $elemMatch: { seasonYear: { $regex: `^${normalizedYear}` } } } },
+        { fieldingStats: { $elemMatch: { seasonYear: { $regex: `^${normalizedYear}` } } } },
+        { pitchingStats: { $elemMatch: { seasonYear: { $regex: `^${normalizedYear}` } } } }
+      ];
+    }
 
     if (name) {
       const parts = name.trim().split(/\s+/);
