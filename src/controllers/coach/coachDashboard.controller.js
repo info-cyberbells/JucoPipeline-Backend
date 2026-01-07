@@ -101,12 +101,12 @@ export const getCoachDashboardOLDDDDDDD = async (req, res) => {
         // Format videos with full URLs
         const formattedVideos = userData.videos && userData.videos.length > 0
           ? userData.videos.map(video => ({
-              _id: video._id,
-              url: video.url.startsWith("http") ? video.url : `${baseURL}${video.url}`,
-              title: video.title,
-              uploadedAt: video.uploadedAt,
-              fileSize: video.fileSize
-            }))
+            _id: video._id,
+            url: video.url.startsWith("http") ? video.url : `${baseURL}${video.url}`,
+            title: video.title,
+            uploadedAt: video.uploadedAt,
+            fileSize: video.fileSize
+          }))
           : [];
 
         return {
@@ -186,7 +186,7 @@ export const getCoachDashboardOLDDDDDDD = async (req, res) => {
 
 const POSITION_DETAIL_MAP = {
   P: "Pitcher",
-  
+
   RHP: "Right-Handed Pitcher",
   LHP: "Left-Handed Pitcher",
 
@@ -200,13 +200,12 @@ const POSITION_DETAIL_MAP = {
   LF: "Left Fielder",
   CF: "Center Fielder",
   RF: "Right Fielder",
-  
+
   DH: "Designated Hitter",
   INF: "Infielders",
   OF: "Outfielders",
   "OF RHP": "Outfielder Right-Handed Pitcher",
 };
-
 
 export const getCoachDashboard = async (req, res) => {
   try {
@@ -217,7 +216,7 @@ export const getCoachDashboard = async (req, res) => {
       statsType = "batting", // batting, pitching, fielding
       sortBy = "batting_average",
       sortOrder = "desc",
-      
+
       // === BATTING FILTERS ===
       batting_average_min,
       batting_average_max,
@@ -243,7 +242,7 @@ export const getCoachDashboard = async (req, res) => {
       strikeouts_max,
       stolen_bases_min,
       stolen_bases_max,
-      
+
       // === PITCHING FILTERS ===
       era_min,
       era_max,
@@ -261,7 +260,7 @@ export const getCoachDashboard = async (req, res) => {
       hits_allowed_max,
       saves_min,
       saves_max,
-      
+
       // === FIELDING FILTERS ===
       fielding_percentage_min,
       fielding_percentage_max,
@@ -307,7 +306,7 @@ export const getCoachDashboard = async (req, res) => {
 
     if (followingList.length > 0) {
       const skip = (parseInt(page) - 1) * parseInt(limit);
-      
+
       // === BUILD FILTER QUERY ===
       const filterQuery = {
         _id: { $in: followingList },
@@ -611,7 +610,7 @@ export const getCoachDashboard = async (req, res) => {
       // === EXECUTE QUERY WITH FILTERS ===
       const [players, totalCount] = await Promise.all([
         User.find(filterQuery)
-          .populate('team')
+          .populate('team', 'name logo location division')
           // .select("firstName lastName email position jerseyNumber profileImage battingStats pitchingStats fieldingStats videos team")
           .sort(sortOptions)
           .skip(skip)
@@ -630,27 +629,30 @@ export const getCoachDashboard = async (req, res) => {
         // Format videos with full URLs
         const formattedVideos = userData.videos && userData.videos.length > 0
           ? userData.videos.map(video => ({
-              _id: video._id,
-              url: video.url.startsWith("http") ? video.url : `${baseURL}${video.url}`,
-              title: video.title,
-              uploadedAt: video.uploadedAt,
-              fileSize: video.fileSize
-            }))
+            _id: video._id,
+            url: video.url.startsWith("http") ? video.url : `${baseURL}${video.url}`,
+            title: video.title,
+            uploadedAt: video.uploadedAt,
+            fileSize: video.fileSize
+          }))
           : [];
-
-          const positionCode = userData.position;
-          const positionDetailName = POSITION_DETAIL_MAP[positionCode] || "N/A";
-
 
         return {
           ...userData,
           _id: userData._id,
           name: `${userData.firstName} ${userData.lastName}`,
           position: userData.position || "N/A",
-          positionDetailName,
-          ...userData.team,
-          // team: userData.team?.name || "N/A",
-          teamLogo: userData.team?.logo || null,
+          team: userData.team || null,
+
+          // profileImage: userData.profileImage,
+          // height: userData.height || "N/A",
+          // weight: userData.weight || "N/A",
+          // batsthrow: userData.batsthrow || "N/A",
+          // hometown: userData.hometown || "N/A",
+          // highschool: userData.highschool || "N/A",
+          // previousSchool: userData.previousSchool || "N/A",
+
+
           class: latestBattingStats.seasonYear || latestPitchingStats.seasonYear || latestFieldingStats.seasonYear || "N/A",
           profileImage: userData.profileImage,
           battingStats: latestBattingStats,
@@ -1097,7 +1099,12 @@ export const getFollowedTeams = async (req, res) => {
         return {
           _id: team._id,
           name: team.name,
-          logo: team.logo ? `${baseURL}${team.logo}` : null,
+          logo: team.logo
+            ? team.logo.startsWith("http")
+              ? team.logo
+              : `${baseURL}${team.logo}`
+            : null,
+
           location: team.location ? team.location : null,
           division: team.division ? team.division : null,
           region: team.region ? team.region : null,

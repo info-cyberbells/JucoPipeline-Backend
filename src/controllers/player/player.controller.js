@@ -56,12 +56,12 @@ const calculateProfileCompleteness = (player) => {
 // Helper to format user data with full URLs
 const formatPlayerData = (player, baseURL) => {
   const playerData = player.toObject();
-  console.log('playerData',playerData)
+  console.log('playerData', playerData)
   // Format profile image
   if (playerData.profileImage && !playerData.profileImage.startsWith("http")) {
     playerData.profileImage = `${baseURL}${playerData.profileImage}`;
   }
-  
+
   // Format videos
   if (playerData.videos && playerData.videos.length > 0) {
     playerData.videos = playerData.videos.map(video => ({
@@ -69,7 +69,7 @@ const formatPlayerData = (player, baseURL) => {
       url: video.url.startsWith("http") ? video.url : `${baseURL}${video.url}`
     }));
   }
-  
+
   // Format coach recommendation
   if (playerData.coachRecommendation && playerData.coachRecommendation.url) {
     if (!playerData.coachRecommendation.url.startsWith("http")) {
@@ -88,7 +88,7 @@ const formatPlayerData = (player, baseURL) => {
       playerData.photoIdDocument.documentUrl = `${baseURL}${playerData.photoIdDocument.documentUrl}`;
     }
   }
-  
+
   // Calculate profile completeness
   const completeness = calculateProfileCompleteness(player);
   playerData.profileCompleteness = completeness.percentage;
@@ -98,7 +98,7 @@ const formatPlayerData = (player, baseURL) => {
     missingItems: completeness.missingItems,
     isComplete: completeness.percentage === 100
   };
-  
+
   delete playerData.password;
   return playerData;
 };
@@ -109,18 +109,18 @@ const formatPlayerData = (player, baseURL) => {
  */
 const normalizeSeasonYear = (seasonYear) => {
   if (!seasonYear) return null;
-  
+
   // If it's already a simple year like "2024"
   if (/^\d{4}$/.test(seasonYear)) {
     return seasonYear;
   }
-  
+
   // If it's a range like "2024-25" or "2017-18", extract first year
   const match = seasonYear.match(/^(\d{4})-\d{2}$/);
   if (match) {
     return match[1];
   }
-  
+
   return seasonYear;
 };
 
@@ -133,7 +133,7 @@ const filterStatsByYear = (statsArray, targetYear) => {
   }
 
   return statsArray.filter(stat => {
-    const statYear = normalizeSeasonYear(stat.seasonYear);
+    const statYear = normalizeSeasonYear(stat?.seasonYear);
     return statYear === targetYear;
   });
 };
@@ -142,9 +142,9 @@ const filterStatsByYear = (statsArray, targetYear) => {
 export const getPlayerProfile = async (req, res) => {
   try {
     const playerId = req.user.id;
-    
+
     const player = await User.findById(playerId).populate('team').select("-password");
-    
+
     if (!player || player.role !== "player") {
       return res.status(400).json({ message: "Player not found" });
     }
@@ -175,12 +175,12 @@ export const updatePlayerProfile = async (req, res) => {
       highSchool,
       previousSchool,
       instaURL,
-      xURL, 
+      xURL,
       gpa, sat, act, transferStatus, height, weight, commitmentStatus, playerClass
     } = req.body;
 
     const player = await User.findById(playerId);
-    
+
     if (!player || player.role !== "player") {
       return res.status(400).json({ message: "Player not found" });
     }
@@ -232,13 +232,13 @@ export const updatePlayerProfile = async (req, res) => {
 export const uploadPlayerVideos = async (req, res) => {
   try {
     const playerId = req.user.id;
-    
+
     if (!req.files || !req.files.videos || req.files.videos.length === 0) {
       return res.status(400).json({ message: "No video files uploaded" });
     }
 
     const player = await User.findById(playerId);
-    
+
     if (!player || player.role !== "player") {
       return res.status(400).json({ message: "Player not found" });
     }
@@ -246,14 +246,14 @@ export const uploadPlayerVideos = async (req, res) => {
     // Limit to 2 videos total
     const currentVideoCount = player.videos ? player.videos.length : 0;
     const newVideoCount = req.files.videos.length;
-    
+
     if (currentVideoCount + newVideoCount > 6) {
       // Delete uploaded files
       req.files.videos.forEach(file => {
         fs.unlinkSync(file.path);
       });
-      return res.status(400).json({ 
-        message: "Maximum 6 videos allowed. Please delete existing videos first." 
+      return res.status(400).json({
+        message: "Maximum 6 videos allowed. Please delete existing videos first."
       });
     }
 
@@ -293,7 +293,7 @@ export const deletePlayerVideo = async (req, res) => {
     const { videoId } = req.params;
 
     const player = await User.findById(playerId);
-    
+
     if (!player || player.role !== "player") {
       return res.status(400).json({ message: "Player not found" });
     }
@@ -312,13 +312,13 @@ export const deletePlayerVideo = async (req, res) => {
     }
 
     const videoUrl = player.videos[videoIndex].url;
-    
+
     // Delete file from filesystem
     try {
       // Remove the base URL if present
       const cleanUrl = videoUrl.replace(/^https?:\/\/[^\/]+/, '');
       const filePath = path.join(process.cwd(), cleanUrl);
-      
+
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
         console.log(`Video file deleted: ${filePath}`);
@@ -355,13 +355,13 @@ export const deletePlayerVideo = async (req, res) => {
 export const uploadCoachRecommendation = async (req, res) => {
   try {
     const playerId = req.user.id;
-    
+
     if (!req.files || !req.files.recommendation) {
       return res.status(400).json({ message: "No PDF file uploaded" });
     }
 
     const player = await User.findById(playerId);
-    
+
     if (!player || player.role !== "player") {
       return res.status(400).json({ message: "Player not found" });
     }
@@ -379,7 +379,7 @@ export const uploadCoachRecommendation = async (req, res) => {
     }
 
     const file = req.files.recommendation[0];
-    
+
     player.coachRecommendation = {
       url: `/uploads/recommendations/${file.filename}`,
       filename: file.originalname,
@@ -411,7 +411,7 @@ export const deleteCoachRecommendation = async (req, res) => {
     const playerId = req.user.id;
 
     const player = await User.findById(playerId);
-    
+
     if (!player || player.role !== "player") {
       return res.status(400).json({ message: "Player not found" });
     }
@@ -459,7 +459,7 @@ export const uploadAcademicInfo = async (req, res) => {
     }
 
     const player = await User.findById(playerId);
-    
+
     if (!player || player.role !== "player") {
       return res.status(400).json({ message: "Player not found" });
     }
@@ -477,7 +477,7 @@ export const uploadAcademicInfo = async (req, res) => {
     }
 
     const file = req.files.academicInfo[0];
-    
+
     player.acedemicInfo = {
       url: `/uploads/academicinfos/${file.filename}`,
       filename: file.originalname,
@@ -504,7 +504,7 @@ export const deleteAcademicInfo = async (req, res) => {
   try {
     const playerId = req.user.id;
     const player = await User.findById(playerId);
-    
+
     if (!player || player.role !== "player") {
       return res.status(400).json({ message: "Player not found" });
     }
@@ -549,19 +549,19 @@ export const addAward = async (req, res) => {
     }
 
     const player = await User.findById(playerId);
-    
+
     if (!player || player.role !== "player") {
       return res.status(400).json({ message: "Player not found" });
     }
 
     if (!player.awardsAchievements) player.awardsAchievements = [];
-    
+
     if (player.awardsAchievements.includes(award.trim())) {
       return res.status(400).json({ message: "Award already exists" });
     }
 
     player.awardsAchievements.push(award.trim());
-    
+
     // Calculate and save profile completeness
     const completeness = calculateProfileCompleteness(player);
     player.profileCompleteness = completeness.percentage;
@@ -587,7 +587,7 @@ export const removeAward = async (req, res) => {
     const { award } = req.body;
 
     const player = await User.findById(playerId);
-    
+
     if (!player || player.role !== "player") {
       return res.status(400).json({ message: "Player not found" });
     }
@@ -597,7 +597,7 @@ export const removeAward = async (req, res) => {
     }
 
     player.awardsAchievements = player.awardsAchievements.filter(a => a !== award);
-    
+
     // Calculate and save profile completeness
     const completeness = calculateProfileCompleteness(player);
     player.profileCompleteness = completeness.percentage;
@@ -627,13 +627,13 @@ export const addStrength = async (req, res) => {
     }
 
     const player = await User.findById(playerId);
-    
+
     if (!player || player.role !== "player") {
       return res.status(400).json({ message: "Player not found" });
     }
 
     if (!player.strengths) player.strengths = [];
-    
+
     // Check for duplicates
     if (player.strengths.includes(strength.trim())) {
       return res.status(400).json({ message: "Strength already exists" });
@@ -663,7 +663,7 @@ export const removeStrength = async (req, res) => {
     const { strength } = req.body;
 
     const player = await User.findById(playerId);
-    
+
     if (!player || player.role !== "player") {
       return res.status(400).json({ message: "Player not found" });
     }
@@ -693,13 +693,13 @@ export const removeStrength = async (req, res) => {
 export const updatePlayerProfileImage = async (req, res) => {
   try {
     const playerId = req.user.id;
-    
+
     if (!req.files || !req.files.profileImage) {
       return res.status(400).json({ message: "No image file uploaded" });
     }
 
     const player = await User.findById(playerId);
-    
+
     if (!player || player.role !== "player") {
       return res.status(400).json({ message: "Player not found" });
     }
@@ -718,7 +718,7 @@ export const updatePlayerProfileImage = async (req, res) => {
     }
 
     const file = req.files.profileImage[0];
-    
+
     // Update profile image
     player.profileImage = `/uploads/profiles/${file.filename}`;
 
@@ -742,7 +742,7 @@ export const deletePlayerProfileImage = async (req, res) => {
     const playerId = req.user.id;
 
     const player = await User.findById(playerId);
-    
+
     if (!player || player.role !== "player") {
       return res.status(400).json({ message: "Player not found" });
     }
@@ -847,10 +847,10 @@ export const getUncommittedPLayerSeasonYearRequired = async (req, res) => {
     const {
       page = 1,
       limit = 10,
-      
+
       // === SEASON YEAR FILTER ===
       seasonYear,
-      
+
       // === BATTING FILTERS ===
       batting_average_min,
       batting_average_max,
@@ -876,7 +876,7 @@ export const getUncommittedPLayerSeasonYearRequired = async (req, res) => {
       strikeouts_max,
       stolen_bases_min,
       stolen_bases_max,
-      
+
       // === PITCHING FILTERS ===
       era_min,
       era_max,
@@ -894,7 +894,7 @@ export const getUncommittedPLayerSeasonYearRequired = async (req, res) => {
       hits_allowed_max,
       saves_min,
       saves_max,
-      
+
       // === FIELDING FILTERS ===
       fielding_percentage_min,
       fielding_percentage_max,
@@ -917,7 +917,7 @@ export const getUncommittedPLayerSeasonYearRequired = async (req, res) => {
     // Base filter for uncommitted players
     const filter = {
       role: "player",
-      registrationStatus : "approved"
+      registrationStatus: "approved"
     };
 
     // === COMMITMENT STATUS FILTER ===
@@ -1218,9 +1218,9 @@ export const getUncommittedPLayerSeasonYearRequired = async (req, res) => {
     const totalPlayers = await User.countDocuments(filter);
     const players = await User.find(filter).populate("team").skip(skip).limit(parseInt(limit)).sort({ createdAt: -1 });
     if (!players?.length) {
-      if(name){
+      if (name) {
         return res.status(400).json({ message: "No uncommitted players found with this name" });
-      } else if(seasonYear){
+      } else if (seasonYear) {
         return res.status(400).json({ message: "No uncommitted players found with this year" });
       } else {
         return res.status(400).json({ message: "No uncommitted players found" });
@@ -1235,14 +1235,14 @@ export const getUncommittedPLayerSeasonYearRequired = async (req, res) => {
     const formattedPlayers = players
       .map(player => {
         const data = player.toObject();
-        
+
         // FILTER STATS BY SEASON YEAR
         if (normalizedYear) {
           data.battingStats = filterStatsByYear(data.battingStats, normalizedYear);
           data.fieldingStats = filterStatsByYear(data.fieldingStats, normalizedYear);
           data.pitchingStats = filterStatsByYear(data.pitchingStats, normalizedYear);
         }
-        
+
         if (data.profileImage && !data.profileImage.startsWith("http")) {
           data.profileImage = `${baseURL}${data.profileImage}`;
         }
@@ -1250,6 +1250,7 @@ export const getUncommittedPLayerSeasonYearRequired = async (req, res) => {
         if (data.team?.logo && !data.team.logo.startsWith("http")) {
           data.team.logo = `${baseURL}${data.team.logo}`;
         }
+        data.committedTo = data.committedTo ?? null;
 
         delete data.password;
         delete data.photoIdDocuments;
@@ -1261,12 +1262,12 @@ export const getUncommittedPLayerSeasonYearRequired = async (req, res) => {
         if (!normalizedYear) {
           return true;
         }
-        
+
         // If seasonYear filter is applied, only keep players who have at least one stat for that year
         const hasBattingStats = player.battingStats && player.battingStats.length > 0;
         const hasFieldingStats = player.fieldingStats && player.fieldingStats.length > 0;
         const hasPitchingStats = player.pitchingStats && player.pitchingStats.length > 0;
-        
+
         return hasBattingStats || hasFieldingStats || hasPitchingStats;
       });
 
@@ -1276,7 +1277,7 @@ export const getUncommittedPLayerSeasonYearRequired = async (req, res) => {
       const seasonEndYear = (seasonStartYear + 1).toString().slice(-2);
       const seasonLabel = `${seasonStartYear}-${seasonEndYear}`;
 
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: `No players found with stats for season year ${seasonYear}`,
         formattedPlayers,
         pagination: {
@@ -1305,18 +1306,18 @@ export const getUncommittedPLayerSeasonYearRequired = async (req, res) => {
 };
 
 const applyStatRange = (arrayField, statField, min, max) => {
-      if (!min && !max) return;
+  if (!min && !max) return;
 
-      const range = {};
-      if (min) range.$gte = Number(min);
-      if (max) range.$lte = Number(max);
+  const range = {};
+  if (min) range.$gte = Number(min);
+  if (max) range.$lte = Number(max);
 
-      filter[arrayField] = {
-        $elemMatch: {
-          [statField]: range
-        }
-      };
-    };
+  filter[arrayField] = {
+    $elemMatch: {
+      [statField]: range
+    }
+  };
+};
 
 export const getUncommittedPLayer = async (req, res) => {
   try {
@@ -1392,6 +1393,7 @@ export const getUncommittedPLayer = async (req, res) => {
 
     // === SAFE NORMALIZED YEAR ===
     const normalizedYear = seasonYear && seasonYear !== "all" ? normalizeSeasonYear(seasonYear) : null;
+    console.log('normalizedYear', normalizedYear);
 
     // === BASE FILTER ===
     const filter = {
@@ -1433,36 +1435,36 @@ export const getUncommittedPLayer = async (req, res) => {
 
     // === BATTING FILTERS ===
     // const num = v => (v !== undefined ? Number(v) : undefined);
-    applyStatRange("battingStats","batting_average", batting_average_min, batting_average_max);
-    applyStatRange("battingStats","on_base_percentage", on_base_percentage_min, on_base_percentage_max);
-    applyStatRange("battingStats","slugging_percentage", slugging_percentage_min, slugging_percentage_max);
-    applyStatRange("battingStats","home_runs", home_runs_min, home_runs_max);
-    applyStatRange("battingStats","rbi", rbi_min, rbi_max);
-    applyStatRange("battingStats","hits", hits_min, hits_max);
-    applyStatRange("battingStats","runs", runs_min, runs_max);
-    applyStatRange("battingStats","doubles", doubles_min, doubles_max);
-    applyStatRange("battingStats","triples", triples_min, triples_max);
-    applyStatRange("battingStats","walks", walks_min, walks_max);
-    applyStatRange("battingStats","strikeouts", strikeouts_min, strikeouts_max);
-    applyStatRange("battingStats","stolen_bases", stolen_bases_min, stolen_bases_max);
+    applyStatRange("battingStats", "batting_average", batting_average_min, batting_average_max);
+    applyStatRange("battingStats", "on_base_percentage", on_base_percentage_min, on_base_percentage_max);
+    applyStatRange("battingStats", "slugging_percentage", slugging_percentage_min, slugging_percentage_max);
+    applyStatRange("battingStats", "home_runs", home_runs_min, home_runs_max);
+    applyStatRange("battingStats", "rbi", rbi_min, rbi_max);
+    applyStatRange("battingStats", "hits", hits_min, hits_max);
+    applyStatRange("battingStats", "runs", runs_min, runs_max);
+    applyStatRange("battingStats", "doubles", doubles_min, doubles_max);
+    applyStatRange("battingStats", "triples", triples_min, triples_max);
+    applyStatRange("battingStats", "walks", walks_min, walks_max);
+    applyStatRange("battingStats", "strikeouts", strikeouts_min, strikeouts_max);
+    applyStatRange("battingStats", "stolen_bases", stolen_bases_min, stolen_bases_max);
 
     // === PITCHING FILTERS ===
-    applyStatRange("pitchingStats","era", era_min, era_max);
-    applyStatRange("pitchingStats","wins", wins_min, wins_max);
-    applyStatRange("pitchingStats","losses", losses_min, losses_max);
-    applyStatRange("pitchingStats","strikeouts_pitched", strikeouts_pitched_min, strikeouts_pitched_max);
-    applyStatRange("pitchingStats","innings_pitched", innings_pitched_min, innings_pitched_max);
-    applyStatRange("pitchingStats","walks_allowed", walks_allowed_min, walks_allowed_max);
-    applyStatRange("pitchingStats","hits_allowed", hits_allowed_min, hits_allowed_max);
-    applyStatRange("pitchingStats","saves", saves_min, saves_max);
+    applyStatRange("pitchingStats", "era", era_min, era_max);
+    applyStatRange("pitchingStats", "wins", wins_min, wins_max);
+    applyStatRange("pitchingStats", "losses", losses_min, losses_max);
+    applyStatRange("pitchingStats", "strikeouts_pitched", strikeouts_pitched_min, strikeouts_pitched_max);
+    applyStatRange("pitchingStats", "innings_pitched", innings_pitched_min, innings_pitched_max);
+    applyStatRange("pitchingStats", "walks_allowed", walks_allowed_min, walks_allowed_max);
+    applyStatRange("pitchingStats", "hits_allowed", hits_allowed_min, hits_allowed_max);
+    applyStatRange("pitchingStats", "saves", saves_min, saves_max);
 
     // === FIELDING FILTERS ===
-    applyStatRange("fieldingStats","fielding_percentage", fielding_percentage_min, fielding_percentage_max);
-    applyStatRange("fieldingStats","errors", errors_min, errors_max);
-    applyStatRange("fieldingStats","putouts", putouts_min, putouts_max);
-    applyStatRange("fieldingStats","assists", assists_min, assists_max);
-    applyStatRange("fieldingStats","double_plays", double_plays_min, double_plays_max);
-    
+    applyStatRange("fieldingStats", "fielding_percentage", fielding_percentage_min, fielding_percentage_max);
+    applyStatRange("fieldingStats", "errors", errors_min, errors_max);
+    applyStatRange("fieldingStats", "putouts", putouts_min, putouts_max);
+    applyStatRange("fieldingStats", "assists", assists_min, assists_max);
+    applyStatRange("fieldingStats", "double_plays", double_plays_min, double_plays_max);
+
 
     // === FETCH DATA ===
     const totalPlayers = await User.countDocuments(filter);
@@ -1475,7 +1477,7 @@ export const getUncommittedPLayer = async (req, res) => {
 
     // === FORMAT RESPONSE ===
     const baseURL = `${req.protocol}://${req.get("host")}`;
-    console.log('players',players)
+    console.log('players', players)
     const formattedPlayers = players
       .map(player => {
         const data = player.toObject();
@@ -1493,7 +1495,14 @@ export const getUncommittedPLayer = async (req, res) => {
         if (data.team?.logo && !data.team.logo.startsWith("http")) {
           data.team.logo = `${baseURL}${data.team.logo}`;
         }
-        
+
+        if (data.videos && data.videos.length > 0) {
+          data.videos = data.videos.map(video => ({
+            ...video,
+            url: video.url.startsWith("http") ? video.url : `${baseURL}${video.url}`
+          }));
+        }
+
         delete data.password;
         delete data.photoIdDocuments;
 
@@ -1535,6 +1544,7 @@ export const getUncommittedPLayer = async (req, res) => {
   } catch (error) {
     console.error("Get Uncommitted Players Error:", error);
     res.status(500).json({ message: error.message });
+    console.log("error", error);
   }
 };
 
@@ -1545,15 +1555,15 @@ export const getUncommittedPLayer = async (req, res) => {
 // Helper to format user data
 const formatUserData = (user, baseURL) => {
   const userData = user.toObject();
-  
+
   if (userData.profileImage && !userData.profileImage.startsWith("http")) {
     userData.profileImage = `${baseURL}${userData.profileImage}`;
   }
-  
+
   if (userData.team?.logo && !userData.team.logo.startsWith("http")) {
     userData.team.logo = `${baseURL}${userData.team.logo}`;
   }
-  
+
   delete userData.password;
   return userData;
 };
@@ -1572,7 +1582,7 @@ export const getTop10PlayersByMetric = async (req, res) => {
     const baseURL = `${req.protocol}://${req.get("host")}`;
 
     // Build filter
-    const filter = { role: "player", registrationStatus: "approved", isActive: true};
+    const filter = { role: "player", registrationStatus: "approved", isActive: true };
     // Filter by position if specified
     if (position && position !== "all") {
       filter.position = { $regex: new RegExp(position, 'i') };
@@ -1603,7 +1613,7 @@ export const getTop10PlayersByMetric = async (req, res) => {
     const players = await User.find(filter).populate('team').select(`firstName lastName profileImage position videos team ${statsField}`).sort({ [sortField]: sortOrder }).limit(parseInt(limit));
     // Get following status for players
     const playerIds = players.map(p => p._id);
-    const followedPlayers = await Follow.find({ follower: coachId, following: { $in: playerIds }}).distinct('following');
+    const followedPlayers = await Follow.find({ follower: coachId, following: { $in: playerIds } }).distinct('following');
     const followedSet = new Set(followedPlayers.map(id => id.toString()));
 
     // Format response
@@ -1790,7 +1800,7 @@ export const searchPlayersForStatistics = async (req, res) => {
     // Format response
     const formattedPlayers = players.map(player => {
       const userData = formatUserData(player, baseURL);
-      
+
       let latestStats = {};
       let metricValue = 0;
 
@@ -1817,8 +1827,8 @@ export const searchPlayersForStatistics = async (req, res) => {
         videos: userData.videos?.length || 0,
         metricValue: metricValue,
         era: category === "pitching" ? latestStats.era || 0 : null,
-        record: category === "pitching" 
-          ? `${latestStats.wins || 0}-${latestStats.losses || 0}` 
+        record: category === "pitching"
+          ? `${latestStats.wins || 0}-${latestStats.losses || 0}`
           : null,
         whip: category === "pitching" ? latestStats.whip || 0 : null,
         isFollowing: followedSet.has(userData._id.toString())

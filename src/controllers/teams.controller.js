@@ -22,7 +22,7 @@ const formatPlayerData = (player, baseURL) => {
   if (playerData.profileImage && !playerData.profileImage.startsWith("http")) {
     playerData.profileImage = `${baseURL}${playerData.profileImage}`;
   }
-  
+
   // Format videos
   if (playerData.videos && playerData.videos.length > 0) {
     playerData.videos = playerData.videos.map(video => ({
@@ -49,7 +49,7 @@ const formatPlayerData = (player, baseURL) => {
       playerData.photoIdDocument.documentUrl = `${baseURL}${playerData.photoIdDocument.documentUrl}`;
     }
   }
-  
+
   delete playerData.password;
   return playerData;
 };
@@ -61,7 +61,7 @@ const normalizeSeasonYear = (year) => {
   let baseYear = year.toString().split("-")[0];
 
   if (baseYear === "2025") {
-    baseYear = "2024";
+    baseYear = "2025";
   }
 
   return baseYear;
