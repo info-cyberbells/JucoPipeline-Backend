@@ -587,7 +587,7 @@ export const getCoachDashboard = async (req, res) => {
       const [players, totalCount] = await Promise.all([
         User.find(filterQuery)
           .populate('team', 'name logo location division')
-          .select("firstName lastName email position jerseyNumber profileImage battingStats pitchingStats fieldingStats videos team")
+          // .select("firstName lastName email position jerseyNumber profileImage battingStats pitchingStats fieldingStats videos team")
           .sort(sortOptions)
           .skip(skip)
           .limit(parseInt(limit)),
@@ -614,11 +614,22 @@ export const getCoachDashboard = async (req, res) => {
           : [];
 
         return {
+          ...userData,
           _id: userData._id,
           name: `${userData.firstName} ${userData.lastName}`,
           position: userData.position || "N/A",
           team: userData.team?.name || "N/A",
           teamLogo: userData.team?.logo || null,
+
+          // profileImage: userData.profileImage,
+          // height: userData.height || "N/A",
+          // weight: userData.weight || "N/A",
+          // batsthrow: userData.batsthrow || "N/A",
+          // hometown: userData.hometown || "N/A",
+          // highschool: userData.highschool || "N/A",
+          // previousSchool: userData.previousSchool || "N/A",
+
+
           class: latestBattingStats.seasonYear || latestPitchingStats.seasonYear || latestFieldingStats.seasonYear || "N/A",
           profileImage: userData.profileImage,
           battingStats: latestBattingStats,

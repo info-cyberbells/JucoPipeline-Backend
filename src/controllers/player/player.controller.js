@@ -842,7 +842,7 @@ export const getPlayerById = async (req, res) => {
 };
 
 // GET UNCOMMITTED PLAYERS WITH FILTERS AND PAGINATION
-export const getUncommittedPLayer = async (req, res) => {
+export const getUncommittedPLayerSeasonYearRequired = async (req, res) => {
   try {
     const {
       page = 1,
@@ -1303,6 +1303,241 @@ export const getUncommittedPLayer = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+const applyStatRange = (arrayField, statField, min, max) => {
+      if (!min && !max) return;
+
+      const range = {};
+      if (min) range.$gte = Number(min);
+      if (max) range.$lte = Number(max);
+
+      filter[arrayField] = {
+        $elemMatch: {
+          [statField]: range
+        }
+      };
+    };
+
+export const getUncommittedPLayer = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+
+      // === SEASON YEAR FILTER ===
+      seasonYear,
+
+      // === BATTING FILTERS ===
+      batting_average_min,
+      batting_average_max,
+      on_base_percentage_min,
+      on_base_percentage_max,
+      slugging_percentage_min,
+      slugging_percentage_max,
+      home_runs_min,
+      home_runs_max,
+      rbi_min,
+      rbi_max,
+      hits_min,
+      hits_max,
+      runs_min,
+      runs_max,
+      doubles_min,
+      doubles_max,
+      triples_min,
+      triples_max,
+      walks_min,
+      walks_max,
+      strikeouts_min,
+      strikeouts_max,
+      stolen_bases_min,
+      stolen_bases_max,
+
+      // === PITCHING FILTERS ===
+      era_min,
+      era_max,
+      wins_min,
+      wins_max,
+      losses_min,
+      losses_max,
+      strikeouts_pitched_min,
+      strikeouts_pitched_max,
+      innings_pitched_min,
+      innings_pitched_max,
+      walks_allowed_min,
+      walks_allowed_max,
+      hits_allowed_min,
+      hits_allowed_max,
+      saves_min,
+      saves_max,
+
+      // === FIELDING FILTERS ===
+      fielding_percentage_min,
+      fielding_percentage_max,
+      errors_min,
+      errors_max,
+      putouts_min,
+      putouts_max,
+      assists_min,
+      assists_max,
+      double_plays_min,
+      double_plays_max,
+
+      commitmentStatus,
+      name,
+      position
+    } = req.query;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // === SAFE NORMALIZED YEAR ===
+    const normalizedYear = seasonYear && seasonYear !== "all" ? normalizeSeasonYear(seasonYear) : null;
+
+    // === BASE FILTER ===
+    const filter = {
+      role: "player",
+      registrationStatus: "approved"
+    };
+
+    if (commitmentStatus) {
+      filter.commitmentStatus = commitmentStatus;
+    }
+
+    // === SEASON FILTER (ONLY IF PROVIDED) ===
+    if (normalizedYear) {
+      filter.$or = [
+        { battingStats: { $elemMatch: { seasonYear: { $regex: `^${normalizedYear}` } } } },
+        { fieldingStats: { $elemMatch: { seasonYear: { $regex: `^${normalizedYear}` } } } },
+        { pitchingStats: { $elemMatch: { seasonYear: { $regex: `^${normalizedYear}` } } } }
+      ];
+    }
+
+    // === NAME FILTER ===
+    if (name) {
+      const parts = name.trim().split(/\s+/);
+      if (parts.length === 1) {
+        const regex = new RegExp(parts[0], "i");
+        filter.$or = [{ firstName: regex }, { lastName: regex }];
+      } else {
+        filter.$and = [
+          { firstName: new RegExp(parts[0], "i") },
+          { lastName: new RegExp(parts[1], "i") }
+        ];
+      }
+    }
+
+    // === POSITION FILTER ===
+    if (position && position !== "all") {
+      filter.position = { $regex: position, $options: "i" };
+    }
+
+    // === BATTING FILTERS ===
+    // const num = v => (v !== undefined ? Number(v) : undefined);
+    applyStatRange("battingStats","batting_average", batting_average_min, batting_average_max);
+    applyStatRange("battingStats","on_base_percentage", on_base_percentage_min, on_base_percentage_max);
+    applyStatRange("battingStats","slugging_percentage", slugging_percentage_min, slugging_percentage_max);
+    applyStatRange("battingStats","home_runs", home_runs_min, home_runs_max);
+    applyStatRange("battingStats","rbi", rbi_min, rbi_max);
+    applyStatRange("battingStats","hits", hits_min, hits_max);
+    applyStatRange("battingStats","runs", runs_min, runs_max);
+    applyStatRange("battingStats","doubles", doubles_min, doubles_max);
+    applyStatRange("battingStats","triples", triples_min, triples_max);
+    applyStatRange("battingStats","walks", walks_min, walks_max);
+    applyStatRange("battingStats","strikeouts", strikeouts_min, strikeouts_max);
+    applyStatRange("battingStats","stolen_bases", stolen_bases_min, stolen_bases_max);
+
+    // === PITCHING FILTERS ===
+    applyStatRange("pitchingStats","era", era_min, era_max);
+    applyStatRange("pitchingStats","wins", wins_min, wins_max);
+    applyStatRange("pitchingStats","losses", losses_min, losses_max);
+    applyStatRange("pitchingStats","strikeouts_pitched", strikeouts_pitched_min, strikeouts_pitched_max);
+    applyStatRange("pitchingStats","innings_pitched", innings_pitched_min, innings_pitched_max);
+    applyStatRange("pitchingStats","walks_allowed", walks_allowed_min, walks_allowed_max);
+    applyStatRange("pitchingStats","hits_allowed", hits_allowed_min, hits_allowed_max);
+    applyStatRange("pitchingStats","saves", saves_min, saves_max);
+
+    // === FIELDING FILTERS ===
+    applyStatRange("fieldingStats","fielding_percentage", fielding_percentage_min, fielding_percentage_max);
+    applyStatRange("fieldingStats","errors", errors_min, errors_max);
+    applyStatRange("fieldingStats","putouts", putouts_min, putouts_max);
+    applyStatRange("fieldingStats","assists", assists_min, assists_max);
+    applyStatRange("fieldingStats","double_plays", double_plays_min, double_plays_max);
+    
+
+    // === FETCH DATA ===
+    const totalPlayers = await User.countDocuments(filter);
+    const players = await User.find(filter).populate("team").skip(skip).limit(parseInt(limit)).sort({ createdAt: -1 });
+    if (!players.length) {
+      if (name) return res.status(400).json({ message: "No uncommitted players found with this name" });
+      if (normalizedYear) return res.status(400).json({ message: "No uncommitted players found with this year" });
+      return res.status(400).json({ message: "No uncommitted players found" });
+    }
+
+    // === FORMAT RESPONSE ===
+    const baseURL = `${req.protocol}://${req.get("host")}`;
+    console.log('players',players)
+    const formattedPlayers = players
+      .map(player => {
+        const data = player.toObject();
+
+        if (normalizedYear) {
+          data.battingStats = filterStatsByYear(data.battingStats, normalizedYear);
+          data.fieldingStats = filterStatsByYear(data.fieldingStats, normalizedYear);
+          data.pitchingStats = filterStatsByYear(data.pitchingStats, normalizedYear);
+        }
+
+        if (data.profileImage && !data.profileImage.startsWith("http")) {
+          data.profileImage = `${baseURL}${data.profileImage}`;
+        }
+
+        if (data.team?.logo && !data.team.logo.startsWith("http")) {
+          data.team.logo = `${baseURL}${data.team.logo}`;
+        }
+        
+        delete data.password;
+        delete data.photoIdDocuments;
+
+        return data;
+      })
+      .filter(p => {
+        if (!normalizedYear) return true;
+        return (
+          (p.battingStats && p.battingStats.length) ||
+          (p.fieldingStats && p.fieldingStats.length) ||
+          (p.pitchingStats && p.pitchingStats.length)
+        );
+      });
+
+    if (normalizedYear && formattedPlayers.length === 0) {
+      return res.status(400).json({
+        message: `No players found with stats for season year ${seasonYear}`,
+        players: [],
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: 0,
+          totalPlayers: 0,
+          limit: parseInt(limit),
+          hasMore: false
+        }
+      });
+    }
+    // console.log('formattedPlayers.length',formattedPlayers);
+    // === FINAL RESPONSE (UNCHANGED FORMAT) ===
+    res.json({
+      message: "Uncommitted players retrieved successfully",
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalPlayers / parseInt(limit)),
+      totalPlayers,
+      limit: parseInt(limit),
+      players: formattedPlayers
+    });
+
+  } catch (error) {
+    console.error("Get Uncommitted Players Error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
 /**
  * Player Statistics

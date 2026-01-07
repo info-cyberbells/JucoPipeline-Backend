@@ -179,30 +179,31 @@ const userSchema = new mongoose.Schema(
     },
     playerClass: {
       type: String,
-      enum: ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate']
+      // enum: ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate'],
+      default: null
     },
     playerScore: {
-      type: Date,
+      type: Number,
       default: null
     },
     jpRank: {
-      type: Date,
+      type: String,
       default: null
     },
     conferenceStrengthScore: {
-      type: Date,
+      type: String,
       default: null
     },
     velo: {
-      type: Date,
+      type: String,
       default: null
     },
     whip: {
-      type: Date,
+      type: String,
       default: null
     },
     region: {
-      type: Date,
+      type: String,
       default: null
     },
     acedemicInfo: {

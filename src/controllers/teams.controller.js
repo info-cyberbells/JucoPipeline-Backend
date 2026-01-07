@@ -54,7 +54,20 @@ const formatPlayerData = (player, baseURL) => {
   return playerData;
 };
 
-const normalizeSeasonYear = (year) => year?.split('-')[0];
+// const normalizeSeasonYear = (year) => year?.split('-')[0];
+const normalizeSeasonYear = (year) => {
+  if (!year) return null;
+
+  let baseYear = year.toString().split("-")[0];
+
+  if (baseYear === "2025") {
+    baseYear = "2024";
+  }
+
+  return baseYear;
+};
+
+
 
 // GET TEAM ROSTER 
 export const getTeamRosterOLLLLDDDDD = async (req, res) => {
@@ -172,7 +185,7 @@ export const getTeamRosterOLLLLDDDDD = async (req, res) => {
 
 // GET TEAM ROSTER
 export const getTeamRosterBKKK = async (req, res) => {
-  // try {
+  try {
     const coachId = req.user.id;
     const { teamId } = req.params;
     const {
@@ -286,9 +299,9 @@ export const getTeamRosterBKKK = async (req, res) => {
       }
     });
 
-  // } catch (error) {
-  //   res.status(500).json({ message: error.message });
-  // }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const getTeamRoster = async (req, res) => {
@@ -311,7 +324,9 @@ export const getTeamRoster = async (req, res) => {
 
     const baseURL = `${req.protocol}://${req.get("host")}`;
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    const baseYear = normalizeSeasonYear(seasonYear);
+    // const baseYear = normalizeSeasonYear(seasonYear);
+    const baseYear = seasonYear ? normalizeSeasonYear(seasonYear) : null;
+
 
     const matchStage = {
       role: "player",
@@ -339,58 +354,132 @@ export const getTeamRoster = async (req, res) => {
       ];
     }
 
+    // const pipeline = [
+    //   { $match: matchStage },
+
+    //   // LOOKUP TEAM DATA
+    //   {
+    //     $lookup: {
+    //       from: "teams", // Collection name (usually plural and lowercase)
+    //       localField: "team",
+    //       foreignField: "_id",
+    //       as: "team"
+    //     }
+    //   },
+
+    //   // UNWIND TEAM DATA (convert array to object)
+    //   {
+    //     $unwind: {
+    //       path: "$team",
+    //       preserveNullAndEmptyArrays: true // Keep players even if team not found
+    //     }
+    //   },
+
+    //   // Filter stats by season
+    //   {
+    //     $addFields: {
+    //       battingStats: {
+    //         $filter: {
+    //           input: "$battingStats",
+    //           as: "stat",
+    //           cond: { $regexMatch: { input: "$$stat.seasonYear", regex: `^${baseYear}` } }
+    //         }
+    //       },
+    //       fieldingStats: {
+    //         $filter: {
+    //           input: "$fieldingStats",
+    //           as: "stat",
+    //           cond: { $regexMatch: { input: "$$stat.seasonYear", regex: `^${baseYear}` } }
+    //         }
+    //       },
+    //       pitchingStats: {
+    //         $filter: {
+    //           input: "$pitchingStats",
+    //           as: "stat",
+    //           cond: { $regexMatch: { input: "$$stat.seasonYear", regex: `^${baseYear}` } }
+    //         }
+    //       }
+    //     }
+    //   },
+
+    //   { $sort: { [sortBy]: sortOrder === "asc" ? 1 : -1 } },
+    //   { $skip: skip },
+    //   { $limit: parseInt(limit) }
+    // ];
+
     const pipeline = [
       { $match: matchStage },
 
-      // LOOKUP TEAM DATA
       {
         $lookup: {
-          from: "teams", // Collection name (usually plural and lowercase)
+          from: "teams",
           localField: "team",
           foreignField: "_id",
           as: "team"
         }
       },
 
-      // UNWIND TEAM DATA (convert array to object)
       {
         $unwind: {
           path: "$team",
-          preserveNullAndEmptyArrays: true // Keep players even if team not found
+          preserveNullAndEmptyArrays: true
         }
-      },
+      }
+    ];
 
-      // Filter stats by season
-      {
+    // console.log("baseYear:", baseYear);
+
+    // Apply season filtering ONLY if seasonYear is provided
+    if (seasonYear && seasonYear !== "all") {
+      pipeline.push({
         $addFields: {
           battingStats: {
             $filter: {
               input: "$battingStats",
               as: "stat",
-              cond: { $regexMatch: { input: "$$stat.seasonYear", regex: `^${baseYear}` } }
+              cond: {
+                $regexMatch: {
+                  input: "$$stat.seasonYear",
+                  regex: `^${baseYear}`
+                }
+              }
             }
           },
           fieldingStats: {
             $filter: {
               input: "$fieldingStats",
               as: "stat",
-              cond: { $regexMatch: { input: "$$stat.seasonYear", regex: `^${baseYear}` } }
+              cond: {
+                $regexMatch: {
+                  input: "$$stat.seasonYear",
+                  regex: `^${baseYear}`
+                }
+              }
             }
           },
           pitchingStats: {
             $filter: {
               input: "$pitchingStats",
               as: "stat",
-              cond: { $regexMatch: { input: "$$stat.seasonYear", regex: `^${baseYear}` } }
+              cond: {
+                $regexMatch: {
+                  input: "$$stat.seasonYear",
+                  regex: `^${baseYear}`
+                }
+              }
             }
           }
         }
-      },
+      });
+    }
 
+  
+    // pagination & sorting remain unchanged
+    pipeline.push(
       { $sort: { [sortBy]: sortOrder === "asc" ? 1 : -1 } },
       { $skip: skip },
       { $limit: parseInt(limit) }
-    ];
+    );
 
     const [players, totalCount] = await Promise.all([
       User.aggregate(pipeline),
@@ -411,6 +500,16 @@ export const getTeamRoster = async (req, res) => {
       const playerData = formatPlayerData(player, baseURL);
       return {
         ...playerData,
+        playerClass: player.playerClass ?? null,
+        playerScore: player.playerScore ?? null,
+        jpRank: player.jpRank ?? null,
+        conferenceStrengthScore: player.conferenceStrengthScore ?? null,
+        velo: player.velo ?? null,
+        whip: player.whip ?? null,
+        era: player.era ?? null,
+        battingAverage: player.battingAverage ?? null,
+        homeRuns: player.homeRuns ?? null,
+        rbi: player.rbi ?? null,
         isFollowing: followedSet.has(player._id.toString()),
       };
     });
