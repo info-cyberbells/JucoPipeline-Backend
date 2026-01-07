@@ -183,6 +183,31 @@ export const getCoachDashboardOLDDDDDDD = async (req, res) => {
   }
 };
 
+
+const POSITION_DETAIL_MAP = {
+  P: "Pitcher",
+  
+  RHP: "Right-Handed Pitcher",
+  LHP: "Left-Handed Pitcher",
+
+  C: "Catcher",
+
+  "1B": "First Baseman",
+  "2B": "Second Baseman",
+  SS: "Shortstop",
+  "3B": "Third Baseman",
+
+  LF: "Left Fielder",
+  CF: "Center Fielder",
+  RF: "Right Fielder",
+  
+  DH: "Designated Hitter",
+  INF: "Infielders",
+  OF: "Outfielders",
+  "OF RHP": "Outfielder Right-Handed Pitcher",
+};
+
+
 export const getCoachDashboard = async (req, res) => {
   try {
     const coachId = req.user.id;
@@ -586,7 +611,7 @@ export const getCoachDashboard = async (req, res) => {
       // === EXECUTE QUERY WITH FILTERS ===
       const [players, totalCount] = await Promise.all([
         User.find(filterQuery)
-          .populate('team', 'name logo location division')
+          .populate('team')
           // .select("firstName lastName email position jerseyNumber profileImage battingStats pitchingStats fieldingStats videos team")
           .sort(sortOptions)
           .skip(skip)
@@ -613,23 +638,19 @@ export const getCoachDashboard = async (req, res) => {
             }))
           : [];
 
+          const positionCode = userData.position;
+          const positionDetailName = POSITION_DETAIL_MAP[positionCode] || "N/A";
+
+
         return {
           ...userData,
           _id: userData._id,
           name: `${userData.firstName} ${userData.lastName}`,
           position: userData.position || "N/A",
-          team: userData.team?.name || "N/A",
+          positionDetailName,
+          ...userData.team,
+          // team: userData.team?.name || "N/A",
           teamLogo: userData.team?.logo || null,
-
-          // profileImage: userData.profileImage,
-          // height: userData.height || "N/A",
-          // weight: userData.weight || "N/A",
-          // batsthrow: userData.batsthrow || "N/A",
-          // hometown: userData.hometown || "N/A",
-          // highschool: userData.highschool || "N/A",
-          // previousSchool: userData.previousSchool || "N/A",
-
-
           class: latestBattingStats.seasonYear || latestPitchingStats.seasonYear || latestFieldingStats.seasonYear || "N/A",
           profileImage: userData.profileImage,
           battingStats: latestBattingStats,
@@ -699,6 +720,7 @@ export const getCoachDashboard = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 
 // GET SUGGESTED PROFILES (Standalone)

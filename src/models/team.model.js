@@ -31,6 +31,10 @@ const teamSchema = new mongoose.Schema(
       type: String,
       trim: true
     },
+    overallRecord: {
+      type: String,
+      trim: true
+    },
     home: {
       type: String,
       trim: true
