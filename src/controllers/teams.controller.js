@@ -30,7 +30,7 @@ const formatPlayerData = (player, baseURL) => {
       url: video.url.startsWith("http") ? video.url : `${baseURL}${video.url}`
     }));
   }
-  
+
   // Format coach recommendation
   if (playerData.coachRecommendation && playerData.coachRecommendation.url) {
     if (!playerData.coachRecommendation.url.startsWith("http")) {
@@ -473,7 +473,7 @@ export const getTeamRoster = async (req, res) => {
       });
     }
 
-  
+
     // pagination & sorting remain unchanged
     pipeline.push(
       { $sort: { [sortBy]: sortOrder === "asc" ? 1 : -1 } },
@@ -515,7 +515,14 @@ export const getTeamRoster = async (req, res) => {
     });
 
     // GET TEAM INFO (for response metadata)
-    const teamInfo = players.length > 0 && players[0].team ? players[0].team : null;
+    let teamInfo = players.length > 0 && players[0].team ? players[0].team : null;
+
+    if (teamInfo?.logo) {
+      teamInfo = {
+        ...teamInfo,
+        logo: `${baseURL}${teamInfo.logo}`
+      };
+    }
 
     res.json({
       message: "Team roster retrieved successfully",
