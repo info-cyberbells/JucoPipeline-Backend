@@ -619,14 +619,14 @@ export const getCoachDashboard = async (req, res) => {
       ]);
 
       const formattedPlayers = players.map(player => {
-      const userData = formatUserData(player, baseURL);
-      const positionCode = userData.position;
-      const positionDetailName = POSITION_DETAIL_MAP[positionCode] || "Unknown Position";
+        const userData = formatUserData(player, baseURL);
+        const positionCode = userData.position;
+        const positionDetailName = POSITION_DETAIL_MAP[positionCode] || "Unknown Position";
 
-        // Get latest stats
-        const latestBattingStats = userData.battingStats?.[0] || {};
-        const latestPitchingStats = userData.pitchingStats?.[0] || {};
-        const latestFieldingStats = userData.fieldingStats?.[0] || {};
+        // Get latest stats (keep as arrays like roster API)
+        const battingStatsArray = userData.battingStats || [];
+        const pitchingStatsArray = userData.pitchingStats || [];
+        const fieldingStatsArray = userData.fieldingStats || [];
 
         // Format videos with full URLs
         const formattedVideos = userData.videos && userData.videos.length > 0
@@ -656,11 +656,11 @@ export const getCoachDashboard = async (req, res) => {
           // previousSchool: userData.previousSchool || "N/A",
 
 
-          class: latestBattingStats.seasonYear || latestPitchingStats.seasonYear || latestFieldingStats.seasonYear || "N/A",
+          class: battingStatsArray[0]?.seasonYear || pitchingStatsArray[0]?.seasonYear || fieldingStatsArray[0]?.seasonYear || "N/A",
           profileImage: userData.profileImage,
-          battingStats: latestBattingStats,
-          pitchingStats: latestPitchingStats,
-          fieldingStats: latestFieldingStats,
+          battingStats: battingStatsArray,      // Return as array
+          pitchingStats: pitchingStatsArray,    // Return as array  
+          fieldingStats: fieldingStatsArray,
           videos: formattedVideos
         };
       });
