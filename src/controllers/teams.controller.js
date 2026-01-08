@@ -524,10 +524,23 @@ export const getTeamRoster = async (req, res) => {
       };
     }
 
+   const playersWithTeamLogo = formattedPlayers.map(player => {
+  if (player.team?.logo) {
+    return {
+      ...player,
+      team: {
+        ...player.team,
+        logo: `${baseURL}${player.team.logo}`
+      }
+    };
+  }
+  return player;
+});
+
     res.json({
       message: "Team roster retrieved successfully",
       team: teamInfo, // Team information
-      players: formattedPlayers,
+      players: playersWithTeamLogo,
       pagination: {
         currentPage: parseInt(page),
         totalPages: Math.ceil(totalCount / limit),
