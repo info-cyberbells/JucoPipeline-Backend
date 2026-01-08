@@ -619,7 +619,9 @@ export const getCoachDashboard = async (req, res) => {
       ]);
 
       const formattedPlayers = players.map(player => {
-        const userData = formatUserData(player, baseURL);
+      const userData = formatUserData(player, baseURL);
+      const positionCode = userData.position;
+      const positionDetailName = POSITION_DETAIL_MAP[positionCode] || "Unknown Position";
 
         // Get latest stats
         const latestBattingStats = userData.battingStats?.[0] || {};
@@ -642,6 +644,7 @@ export const getCoachDashboard = async (req, res) => {
           _id: userData._id,
           name: `${userData.firstName} ${userData.lastName}`,
           position: userData.position || "N/A",
+          positionDetailName,
           team: userData.team || null,
 
           // profileImage: userData.profileImage,
