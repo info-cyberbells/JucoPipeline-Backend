@@ -456,7 +456,7 @@ export const getCoachStatistics = async (req, res) => {
     const [players, totalCount] = await Promise.all([
       User.find(filterQuery)
         .populate('team', 'name logo location division')
-        .select("firstName lastName email position jerseyNumber profileImage battingStats pitchingStats fieldingStats videos team updatedAt gpa")
+        .select("firstName lastName email position jerseyNumber profileImage battingStats pitchingStats fieldingStats videos team updatedAt academic_info_gpa")
         .sort(sortOptions)
         .skip(skip)
         .limit(parseInt(limit)),
@@ -485,7 +485,7 @@ export const getCoachStatistics = async (req, res) => {
         previousSchool: userData.previousSchool || "-",
         newSchool: userData.team?.name || "-",
         teamLogo: userData.team?.logo || null,
-        gpa: userData.gpa || 3.8,
+        academic_info_gpa: userData.academic_info_gpa || 3.8,
         region: userData.team?.location || "N/A",
         lastUpdate: getTimeAgo(userData.updatedAt),
         profileImage: userData.profileImage,

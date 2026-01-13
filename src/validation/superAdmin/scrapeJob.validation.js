@@ -27,9 +27,9 @@ export const updateScrapeJobSchema = Joi.object({
   previousSchool: Joi.string().trim().max(191).allow(null, '').optional(),
 
   // Academic Information
-  gpa: Joi.number().min(0).max(4).allow(null).optional(),
-  sat: Joi.number().min(400).max(1600).allow(null).optional(),
-  act: Joi.number().min(1).max(36).allow(null).optional(),
+  academic_info_gpa: Joi.number().min(0).max(4).allow(null).optional(),
+  academic_info_sat: Joi.number().min(400).max(1600).allow(null).optional(),
+  academic_info_act: Joi.number().min(1).max(36).allow(null).optional(),
   transferStatus: Joi.string().valid('Freshman', 'Transfer', 'JUCO Transfer', '4-Year Transfer').allow(null).optional(),
   playerClass: Joi.string().valid('Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate').allow(null).optional(),
 

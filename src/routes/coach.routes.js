@@ -9,6 +9,7 @@ import { getTeamRoster } from "../controllers/teams.controller.js";
 import { getPlayerById, getUncommittedPLayer, getTop10PlayersByMetric, getAvailableMetrics, searchPlayersForStatistics } from "../controllers/player/player.controller.js";
 import { saveFilter, getMyFilters, deleteFilter } from "../controllers/coach/savedFilter.controller.js";
 import { createCoachNote, getCoachNotes, getNotesForPlayer, getSingleNote, updateCoachNote, deleteCoachNote } from "../controllers/coachNote.controller.js";
+import { createVideoClip, getVideoClips, getSingleVideoClip, updateVideoClip, deleteVideoClip } from "../controllers/videoClip.controller.js";
 
 const router = express.Router();
 // Protect all routes with coach role
@@ -72,5 +73,12 @@ router.get("/get-note/player/:playerId", getNotesForPlayer);
 router.get("/get-note/:noteId", getSingleNote);
 router.put("/update-note/:noteId", updateCoachNote);
 router.delete("/delete-note/:noteId", deleteCoachNote);
+
+// VideoClips
+router.post("/video-clips", createVideoClip);
+router.get("/video-clips", getVideoClips);
+router.get("/video-clips/:clipId", getSingleVideoClip);
+// router.put("/video-clips/:clipId", updateVideoClip);
+router.delete("/video-clips/:clipId", deleteVideoClip);
 
 export default router;

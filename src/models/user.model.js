@@ -27,12 +27,13 @@ const battingStatsSchema = new mongoose.Schema({
   sacrifice_hits: Number,
 
   // NEW FROM CSV
-  hit_by_pitch_total: Number,     // HBP (duplicate safe if needed)
-  intentional_walks: Number,      // if added later
+  // hit_by_pitch_total: Number,     // HBP // Comment on 12JAN
+  intentional_walks: Number,
   walk_percentage: Number,        // BB%
   strikeout_percentage: Number,   // SO%
   on_base_plus_slugging: Number,  // OPS
-
+  attempts: Number,                // Added on 12JAN
+  ground_into_double_play: Number, // Added on 12JAN
 }, { _id: false });
 
 // Fielding Statistics Schema
@@ -46,25 +47,28 @@ const fieldingStatsSchema = new mongoose.Schema({
   total_chances: Number,
   stolen_bases_against: Number,
   runners_caught_stealing: Number,
-  runners_caught_stealing_percentage: Number,
   passed_balls: Number,
   catcher_interference: Number,
 
   // NEW FROM CSV (F_ prefixed)
   fielding_games: Number,                 // F_G
-  fielding_games_started: Number,         // F_GS (if needed)
-  fielding_total_chances: Number,         // F_TC
-  fielding_putouts: Number,               // F_PO
-  fielding_assists: Number,               // F_A
-  fielding_errors: Number,                // F_E
-  fielding_percentage_value: Number,      // F_FPCT
-  fielding_double_plays: Number,          // F_DP
-
-  stolen_base_attempts_against: Number,   // F_SBA
-  runners_caught_stealing_total: Number,  // F_CSB
+  fielding_games_started: Number,         // F_GS
   stolen_base_success_rate: Number,       // F_SBA%
-  caught_stealing_percentage: Number,     // F_RCS%
+  runners_caught_stealing_percentage: Number,   // F_RCS%
+  stolen_bases_allowed: Number,
+  stolen_base_attempt_percentage: Number,
+  caught_stealing_by_catcher: Number,   // New added
 
+  // Duplicate Fields // Comment on 12JAN
+  // caught_stealing_percentage: Number,
+  // runners_caught_stealing_total: Number,  // F_CSB
+  // stolen_base_attempts_against: Number,   // F_SBA
+  // fielding_total_chances: Number,         // F_TC
+  // fielding_double_plays: Number,          // F_DP
+  // fielding_percentage_value: Number,      // F_FPCT
+  // fielding_putouts: Number,               // F_PO
+  // fielding_assists: Number,               // F_A
+  // fielding_errors: Number,                // F_E
 }, { _id: false });
 
 // Pitching Statistics Schema
@@ -97,21 +101,22 @@ const pitchingStatsSchema = new mongoose.Schema({
   // NEW FROM CSV
   appearances: Number,              // P_APP
   games_started: Number,            // P_GS
-  innings_pitched_decimal: Number,  // P_IP
-  walks_per_nine: Number,           // BB/9
-  strikeouts_per_nine: Number,      // K/9
-  home_runs_per_nine: Number,       // HR/9
+  // Commented on 12JAN
+  // innings_pitched_decimal: Number,  // P_IP
+  // walks_per_nine: Number,           // BB/9
+  // strikeouts_per_nine: Number,      // K/9
+  // home_runs_per_nine: Number,       // HR/9
   batting_average_allowed: Number,  // P_B/AVG
 }, { _id: false });
 
 const userSchema = new mongoose.Schema(
   {
-    firstName: { 
-      type: String, 
+    firstName: {
+      type: String,
       required: function () {
         return this.role !== "jucocoach" && this.role !== "media";
       },
-      trim: true 
+      trim: true
     },
     lastName: { type: String, trim: true },
     email: {
@@ -150,7 +155,6 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null
     },
-
     team: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Team",
@@ -158,17 +162,17 @@ const userSchema = new mongoose.Schema(
         return this.role === "player";
       }
     },
-    gpa: {
+    academic_info_gpa: {
       type: Number,
       min: 0,
       max: 4
     },
-    sat: {
+    academic_info_sat: {
       type: Number,
       min: 400,
       max: 1600
     },
-    act: {
+    academic_info_act: {
       type: Number,
       min: 1,
       max: 36
@@ -212,6 +216,18 @@ const userSchema = new mongoose.Schema(
       uploadedAt: Date,
       fileSize: Number
     },
+    player_bio: {
+      type: String,
+      default: null
+    },
+    awards_honors: {
+      type: String,
+      default: null
+    },
+    collegeIcon: {
+      type: String,
+      default: null
+    },
     // Additional Player Information (from CSV)
     jerseyNumber: {
       type: String,
@@ -246,13 +262,9 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true
     },
-
-    // Player Statistics
     battingStats: [battingStatsSchema],
     fieldingStats: [fieldingStatsSchema],
     pitchingStats: [pitchingStatsSchema],
-
-    // CSV Import tracking
     csvImported: {
       type: Boolean,
       default: false
@@ -261,7 +273,6 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
-
     // Scout-specific fields
     jobTitle: {
       type: String,
@@ -270,7 +281,6 @@ const userSchema = new mongoose.Schema(
         return this.role === "scout";
       }
     },
-
     // Coach-specific fields
     school: {
       type: String,
@@ -310,7 +320,6 @@ const userSchema = new mongoose.Schema(
         return this.role === "scout" || this.role === "coach";
       }
     },
-
     // Registration workflow for players
     registrationStatus: {
       type: String,
@@ -319,27 +328,16 @@ const userSchema = new mongoose.Schema(
         return this.role === "player" ? "pending" : "approved";
       }
     },
-
     photoIdDocument: {
       documentUrl: String,
       uploadedAt: { type: Date, default: Date.now },
       ipAddress: String,
       userAgent: String
     },
-
-    // Photo ID verification
-    // photoIdDocuments: [{
-    //   documentUrl: String,
-    //   uploadedAt: { type: Date, default: Date.now },
-    //   ipAddress: String,
-    //   userAgent: String
-    // }],
-
     lastPhotoIdUpload: {
       type: Date,
       default: null
     },
-
     // Admin approval tracking
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -354,19 +352,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null
     },
-
     // Account status
     isActive: {
       type: Boolean,
       default: true
     },
-
-    // Login history
-    lastLogin: {
-      type: Date,
-      default: null
-    },
-
+    lastLogin: { type: Date, default: null },
     city: { type: String, trim: true },
     country: { type: String, trim: true },
     title: {
@@ -458,11 +449,6 @@ const userSchema = new mongoose.Schema(
       enum: ["none", "active", "canceled", "past_due", "trialing"],
       default: "none"
     },
-    // subscriptionPlan: {
-    //   type: String,
-    //   enum: ["none", "coach_monthly", "coach_yearly", "scout_monthly", "scout_yearly"],
-    //   default: "none"
-    // },
     subscriptionPlan: {
       type: String,
       default: "none"
@@ -473,9 +459,7 @@ const userSchema = new mongoose.Schema(
     paypalSubscriptionId: {
       type: String,
       trim: true,
-      // index: true
     },
-
     paymentProvider: {
       type: String,
       enum: ['stripe', 'paypal', 'outseta', null],

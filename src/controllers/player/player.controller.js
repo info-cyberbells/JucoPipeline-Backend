@@ -176,7 +176,7 @@ export const updatePlayerProfile = async (req, res) => {
       previousSchool,
       instaURL,
       xURL,
-      gpa, sat, act, transferStatus, height, weight, commitmentStatus, playerClass
+      academic_info_gpa, academic_info_sat, academic_info_act, transferStatus, height, weight, commitmentStatus, playerClass
     } = req.body;
 
     const player = await User.findById(playerId);
@@ -197,9 +197,9 @@ export const updatePlayerProfile = async (req, res) => {
     if (instaURL !== undefined) player.instaURL = instaURL;
     if (xURL !== undefined) player.xURL = xURL;
 
-    if (gpa !== undefined) player.gpa = gpa;
-    if (sat !== undefined) player.sat = sat;
-    if (act !== undefined) player.act = act;
+    if (academic_info_gpa !== undefined) player.academic_info_gpa = academic_info_gpa;
+    if (academic_info_sat !== undefined) player.academic_info_sat = academic_info_sat;
+    if (academic_info_act !== undefined) player.academic_info_act = academic_info_act;
     if (transferStatus !== undefined) player.transferStatus = transferStatus;
     if (height !== undefined) player.height = height;
     if (weight !== undefined) player.weight = weight;
@@ -479,7 +479,7 @@ export const uploadAcademicInfo = async (req, res) => {
     const file = req.files.academicInfo[0];
 
     player.acedemicInfo = {
-      url: `/uploads/academicinfos/${file.filename}`,
+      url: `/uploads/academicinfo/${file.filename}`,
       filename: file.originalname,
       uploadedAt: new Date(),
       fileSize: file.size
@@ -640,7 +640,7 @@ export const addStrength = async (req, res) => {
     }
 
     player.strengths.push(strength.trim());
-    player.profileCompleteness = calculateProfileCompleteness(player);
+    // player.profileCompleteness = calculateProfileCompleteness(player);
 
     await player.save();
 
@@ -1393,7 +1393,7 @@ export const getUncommittedPLayer = async (req, res) => {
 
     // === SAFE NORMALIZED YEAR ===
     const normalizedYear = seasonYear && seasonYear !== "all" ? normalizeSeasonYear(seasonYear) : null;
-    console.log('normalizedYear', normalizedYear);
+    // console.log('normalizedYear', normalizedYear);
 
     // === BASE FILTER ===
     const filter = {
@@ -1477,7 +1477,7 @@ export const getUncommittedPLayer = async (req, res) => {
 
     // === FORMAT RESPONSE ===
     const baseURL = `${req.protocol}://${req.get("host")}`;
-    console.log('players', players)
+    // console.log('players', players)
     const formattedPlayers = players
       .map(player => {
         const data = player.toObject();
@@ -1531,7 +1531,7 @@ export const getUncommittedPLayer = async (req, res) => {
       });
     }
     // console.log('formattedPlayers.length',formattedPlayers);
-    // === FINAL RESPONSE (UNCHANGED FORMAT) ===
+    // === FINAL RESPONSE ===
     res.json({
       message: "Uncommitted players retrieved successfully",
       currentPage: parseInt(page),
@@ -1642,7 +1642,7 @@ export const getTop10PlayersByMetric = async (req, res) => {
         team: userData.team,
         previousSchool: latestStats.previousSchool || "-",
         newSchool: userData.team?.name || "-",
-        gpa: latestStats.gpa || "3.8",
+        academic_info_gpa: latestStats.academic_info_gpa || "3.8",
         region: userData.team?.region || "-",
         lastUpdate: userData.updatedAt,
         videos: userData.videos,
@@ -1821,7 +1821,7 @@ export const searchPlayersForStatistics = async (req, res) => {
         profileImage: userData.profileImage,
         position: userData.position || "N/A",
         team: userData.team,
-        gpa: "3.8",
+        academic_info_gpa: "3.8",
         region: userData.team?.region || "-",
         lastUpdate: userData.updatedAt,
         videos: userData.videos?.length || 0,
