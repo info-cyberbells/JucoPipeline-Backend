@@ -105,7 +105,8 @@ export const getCoachDashboardOLDDDDDDD = async (req, res) => {
             url: video.url.startsWith("http") ? video.url : `${baseURL}${video.url}`,
             title: video.title,
             uploadedAt: video.uploadedAt,
-            fileSize: video.fileSize
+            fileSize: video.fileSize,
+            duration: video.duration
           }))
           : [];
 
@@ -635,7 +636,8 @@ export const getCoachDashboard = async (req, res) => {
             url: video.url.startsWith("http") ? video.url : `${baseURL}${video.url}`,
             title: video.title,
             uploadedAt: video.uploadedAt,
-            fileSize: video.fileSize
+            fileSize: video.fileSize,
+            duration: video.duration
           }))
           : [];
 

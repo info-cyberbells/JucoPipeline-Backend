@@ -70,6 +70,22 @@ export const getVideoMetadata = (videoPath) => {
 };
 
 /**
+ * Get video duration in seconds
+ * @param {string} videoPath - Path to video file
+ * @returns {Promise<number>} - Video duration in seconds
+ */
+export const getVideoDuration = async (videoPath) => {
+  try {
+    const metadata = await getVideoMetadata(videoPath);
+    const duration = metadata?.format?.duration;
+    return duration ? parseFloat(duration) : 0;
+  } catch (error) {
+    console.error('Error getting video duration:', error);
+    return 0;
+  }
+};
+
+/**
  * Ensure directory exists
  * @param {string} dirPath - Directory path
  */

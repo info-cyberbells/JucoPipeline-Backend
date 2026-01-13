@@ -3,6 +3,7 @@ import Follow from "../../models/follow.model.js";
 import fs from "fs";
 import path from "path";
 import mongoose from "mongoose";
+import { getVideoDuration } from "../../utils/videoProcessor.js";
 
 // Helper function to calculate profile completeness
 const calculateProfileCompleteness = (player) => {
@@ -243,7 +244,7 @@ export const uploadPlayerVideos = async (req, res) => {
       return res.status(400).json({ message: "Player not found" });
     }
 
-    // Limit to 2 videos total
+    // Limit to 6 videos total
     const currentVideoCount = player.videos ? player.videos.length : 0;
     const newVideoCount = req.files.videos.length;
 
@@ -257,13 +258,21 @@ export const uploadPlayerVideos = async (req, res) => {
       });
     }
 
-    // Add new videos
-    const newVideos = req.files.videos.map(file => ({
-      url: `/uploads/videos/${file.filename}`,
-      title: req.body.videoTitle || file.originalname,
-      uploadedAt: new Date(),
-      fileSize: file.size
-    }));
+    // Calculate duration for each video
+    const newVideos = await Promise.all(
+      req.files.videos.map(async (file) => {
+        const videoPath = file.path;
+        const duration = await getVideoDuration(videoPath);
+
+        return {
+          url: `/uploads/videos/${file.filename}`,
+          title: req.body.videoTitle || file.originalname,
+          uploadedAt: new Date(),
+          fileSize: file.size,
+          duration: duration // Duration in seconds
+        };
+      })
+    );
 
     if (!player.videos) player.videos = [];
     player.videos.push(...newVideos);
@@ -818,7 +827,8 @@ export const getPlayerById = async (req, res) => {
         url: video.url.startsWith("http") ? video.url : `${baseURL}${video.url}`,
         title: video.title,
         uploadedAt: video.uploadedAt,
-        fileSize: video.fileSize
+        fileSize: video.fileSize,
+        duration: video.duration
       }));
     }
 
