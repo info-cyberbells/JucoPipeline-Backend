@@ -16,18 +16,50 @@ const savedFilterSchema = new mongoose.Schema(
 
         queryParams: {
             type: Object,
-            required: true
+            required: false
         },
 
         hittingStats: {
-            type: [String],
+            type: [
+                {
+                    stat: {
+                        type: String,
+                        required: true
+                    },
+                    minValue: {
+                        type: Number,
+                        required: true
+                    },
+                    maxValue: {
+                        type: Number,
+                        required: true
+                    }
+                }
+            ],
             default: []
         },
 
+
         pitchingStats: {
-            type: [String],
+            type: [
+                {
+                    stat: {
+                        type: String,
+                        required: true
+                    },
+                    minValue: {
+                        type: Number,
+                        required: true
+                    },
+                    maxValue: {
+                        type: Number,
+                        required: true
+                    }
+                }
+            ],
             default: []
         }
+
     },
     { timestamps: true }
 );

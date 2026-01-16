@@ -16,6 +16,21 @@ export const saveFilter = async (req, res) => {
             });
         }
 
+        const validateStats = (stats) =>
+            stats.every(
+                s =>
+                    typeof s.stat === "string" &&
+                    typeof s.minValue === "number" &&
+                    typeof s.maxValue === "number"
+            );
+
+        if (!validateStats(hittingStats) || !validateStats(pitchingStats)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid stats format"
+            });
+        }
+
         const filter = await SavedFilter.create({
             userId: req.user._id,
             name,
