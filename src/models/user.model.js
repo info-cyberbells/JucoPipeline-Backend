@@ -25,15 +25,12 @@ const battingStatsSchema = new mongoose.Schema({
   slugging_percentage: Number,
   sacrifice_flies: Number,
   sacrifice_hits: Number,
-
-  // NEW FROM CSV
-  // hit_by_pitch_total: Number,     // HBP // Comment on 12JAN
   intentional_walks: Number,
-  walk_percentage: Number,        // BB%
-  strikeout_percentage: Number,   // SO%
-  on_base_plus_slugging: Number,  // OPS
-  attempts: Number,                // Added on 12JAN
-  ground_into_double_play: Number, // Added on 12JAN
+  walk_percentage: Number,
+  strikeout_percentage: Number,
+  on_base_plus_slugging: Number,
+  attempts: Number,
+  ground_into_double_play: Number,
 }, { _id: false });
 
 // Fielding Statistics Schema
@@ -49,26 +46,13 @@ const fieldingStatsSchema = new mongoose.Schema({
   runners_caught_stealing: Number,
   passed_balls: Number,
   catcher_interference: Number,
-
-  // NEW FROM CSV (F_ prefixed)
-  fielding_games: Number,                 // F_G
-  fielding_games_started: Number,         // F_GS
-  stolen_base_success_rate: Number,       // F_SBA%
-  runners_caught_stealing_percentage: Number,   // F_RCS%
+  fielding_games: Number,
+  fielding_games_started: Number,
+  stolen_base_success_rate: Number,
+  runners_caught_stealing_percentage: Number,
   stolen_bases_allowed: Number,
   stolen_base_attempt_percentage: Number,
-  caught_stealing_by_catcher: Number,   // New added
-
-  // Duplicate Fields // Comment on 12JAN
-  // caught_stealing_percentage: Number,
-  // runners_caught_stealing_total: Number,  // F_CSB
-  // stolen_base_attempts_against: Number,   // F_SBA
-  // fielding_total_chances: Number,         // F_TC
-  // fielding_double_plays: Number,          // F_DP
-  // fielding_percentage_value: Number,      // F_FPCT
-  // fielding_putouts: Number,               // F_PO
-  // fielding_assists: Number,               // F_A
-  // fielding_errors: Number,                // F_E
+  caught_stealing_by_catcher: Number,
 }, { _id: false });
 
 // Pitching Statistics Schema
@@ -97,16 +81,9 @@ const pitchingStatsSchema = new mongoose.Schema({
   balks: Number,
   sacrifice_flies_allowed: Number,
   sacrifice_hits_allowed: Number,
-
-  // NEW FROM CSV
-  appearances: Number,              // P_APP
-  games_started: Number,            // P_GS
-  // Commented on 12JAN
-  // innings_pitched_decimal: Number,  // P_IP
-  // walks_per_nine: Number,           // BB/9
-  // strikeouts_per_nine: Number,      // K/9
-  // home_runs_per_nine: Number,       // HR/9
-  batting_average_allowed: Number,  // P_B/AVG
+  appearances: Number,
+  games_started: Number,
+  batting_average_allowed: Number,
 }, { _id: false });
 
 const userSchema = new mongoose.Schema(

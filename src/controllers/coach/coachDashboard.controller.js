@@ -2,6 +2,7 @@ import User from "../../models/user.model.js";
 import Follow from "../../models/follow.model.js";
 import FollowTeam from "../../models/followTeam.model.js";
 import Team from "../../models/team.model.js";
+import VideoRequest from "../../models/videoRequest.model.js";
 import mongoose from "mongoose";
 
 // Helper to format user data
@@ -1371,6 +1372,107 @@ export const getTeamFollowersCount = async (req, res) => {
       teamId,
       followersCount
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+export const requestMoreVideo = async (req, res) => {
+  try {
+    const coachId = req.user.id;
+    const { playerId, note } = req.body;
+
+    // Validate coach
+    const coach = await User.findById(coachId);
+    if (!coach || coach.role !== "coach") {
+      return res.status(403).json({ message: "Only coaches can request videos" });
+    }
+
+    // Validate player
+    const player = await User.findById(playerId);
+    if (!player || player.role !== "player") {
+      return res.status(404).json({ message: "Player not found" });
+    }
+
+    // Prevent duplicate pending request
+    const existing = await VideoRequest.findOne({
+      player: playerId,
+      requestedBy: coachId,
+      status: "pending"
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        message: "You already have a pending request for this player"
+      });
+    }
+
+    // Create request
+    const request = await VideoRequest.create({
+      player: playerId,
+      requestedBy: coachId,
+      note
+    });
+
+    res.status(201).json({
+      message: "Video request sent to admin successfully",
+      request
+    });
+
+  } catch (error) {
+    console.error("Request More Video Error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// For Later
+export const getVideoRequests = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const requests = await VideoRequest.find()
+      .populate("player", "firstName lastName profileImage")
+      .populate("requestedBy", "firstName lastName email")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      message: "Video requests retrieved successfully",
+      requests
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// For Later
+export const updateVideoRequestStatus = async (req, res) => {
+  try {
+    const adminId = req.user.id;
+    const { status } = req.body;
+
+    if (!["approved", "rejected", "completed"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const request = await VideoRequest.findById(req.params.id);
+    if (!request) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    request.status = status;
+    request.handledBy = adminId;
+    request.handledAt = new Date();
+    await request.save();
+
+    res.json({
+      message: "Video request updated successfully",
+      request
+    });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
