@@ -1,4 +1,5 @@
 import User from "../../models/user.model.js";
+import VideoRequest from "../../models/videoRequest.model.js";
 import { sendApprovalEmail, sendRejectionEmail } from "../../services/email.service.js";
 import { generateSuperStrongPassword } from "../../utils/passwordGenerator.js";
 
@@ -344,6 +345,97 @@ export const getPendingCounts = async (req, res) => {
         scouts: scoutPending
       }
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+// Requests Video
+export const getVideoRequestsOLDD = async (req, res) => {
+  try {
+    if (req.user.role !== "superAdmin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    
+    const requests = await VideoRequest.find()
+      .populate("player", "firstName lastName email phoneNumber profileImage")
+      .populate("requestedBy", "firstName lastName email phoneNumber profileImage")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      message: "Video requests retrieved successfully",
+      requests
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getVideoRequests = async (req, res) => {
+  try {
+    if (req.user.role !== "superAdmin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const BASE_URL = `${req.protocol}://${req.get("host")}`;
+    const requests = await VideoRequest.find().populate("player", "firstName lastName email phoneNumber profileImage").populate("requestedBy", "firstName lastName email phoneNumber profileImage").sort({ createdAt: -1 }).lean();
+    const formattedRequests = requests.map(reqItem => ({
+      ...reqItem,
+      player: reqItem.player && {
+        ...reqItem.player,
+        profileImage: reqItem.player.profileImage
+          ? reqItem.player.profileImage.startsWith("http")
+            ? reqItem.player.profileImage
+            : `${BASE_URL}${reqItem.player.profileImage}`
+          : null
+      },
+      requestedBy: reqItem.requestedBy && {
+        ...reqItem.requestedBy,
+        profileImage: reqItem.requestedBy.profileImage
+          ? reqItem.requestedBy.profileImage.startsWith("http")
+            ? reqItem.requestedBy.profileImage
+            : `${BASE_URL}${reqItem.requestedBy.profileImage}`
+          : null
+      }
+    }));
+
+    res.json({
+      message: "Video requests retrieved successfully",
+      requests: formattedRequests
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Requests Video Update
+export const updateVideoRequestStatus = async (req, res) => {
+  try {
+    const adminId = req.user.id;
+    const { status } = req.body;
+
+    if (!["approved", "rejected", "completed"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const request = await VideoRequest.findById(req.params.id);
+    if (!request) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    request.status = status;
+    request.handledBy = adminId;
+    request.handledAt = new Date();
+    await request.save();
+
+    res.json({
+      message: "Video request updated successfully",
+      request
+    });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

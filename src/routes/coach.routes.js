@@ -2,7 +2,7 @@ import express from "express";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { authorizeRoles } from "../middleware/role.middleware.js";
 import { uploadProfile } from "../middleware/upload.middleware.js";
-import { getCoachDashboard, getSuggestedProfiles, followUser, unfollowUser, getFollowingList, getFollowersList, checkIfFollowing, getTopPlayers, followTeam, unfollowTeam, getFollowedTeams, checkIfFollowingTeam, getTeamFollowersCount, requestMoreVideo } from "../controllers/coach/coachDashboard.controller.js";
+import { getCoachDashboard, getSuggestedProfiles, followUser, unfollowUser, getFollowingList, getFollowersList, checkIfFollowing, getTopPlayers, followTeam, unfollowTeam, getFollowedTeams, checkIfFollowingTeam, getTeamFollowersCount, requestMoreVideo, getVideoRequestsByPlayer } from "../controllers/coach/coachDashboard.controller.js";
 import { getCoachProfile, updateCoachProfile, updateCoachProfileImage, deleteCoachProfileImage, resetPassword, forgotPassword, verifyOtp } from "../controllers/coach/coachProfile.controller.js";
 import { validateUpdateCoachProfile, validateResetPassword, validateForgotPassword, validateVerifyOtp } from "../validation/coachProfile.validation.js";
 import { getTeamRoster } from "../controllers/teams.controller.js";
@@ -82,5 +82,6 @@ router.get("/video-clips/:clipId", getSingleVideoClip);
 router.delete("/video-clips/:clipId", deleteVideoClip);
 
 router.post("/video-request", requestMoreVideo);
+router.get("/video-request/player/:playerId", getVideoRequestsByPlayer);
 
 export default router;

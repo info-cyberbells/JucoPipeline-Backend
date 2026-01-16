@@ -16,7 +16,7 @@ const __dirname = dirname(__filename);
  */
 export const createVideoClip = async (req, res) => {
   try {
-    const { videoId, playerId, inTime, outTime, duration, notes } = req.body;
+    const { videoId, playerId, inTime, outTime, duration, description } = req.body;
     const coachId = req.user._id;
 
     // Validation
@@ -102,12 +102,12 @@ export const createVideoClip = async (req, res) => {
       inTime,
       outTime,
       duration: clipDuration,
-      notes: notes || undefined,
+      description: description,
       status: "processing"
     });
 
     // Start video processing asynchronously
-    const clipUrl = await processClipAsync(videoClip._id, video.url, inTime, clipDuration, req);
+    // const clipUrl = await processClipAsync(videoClip._id, video.url, inTime, clipDuration, req);
 
     // Generate response
     const baseURL = `${req.protocol}://${req.get("host")}`;
@@ -123,9 +123,9 @@ export const createVideoClip = async (req, res) => {
         inTime: videoClip.inTime,
         outTime: videoClip.outTime,
         duration: videoClip.duration,
-        clipUrl: clipUrl,
+        clipUrl: '',
         status: "ready",
-        notes: videoClip.notes,
+        description: videoClip.description,
         createdAt: videoClip.createdAt,
         updatedAt: videoClip.updatedAt
       }
@@ -319,7 +319,7 @@ export const getVideoClips = async (req, res) => {
         duration: clip.duration,
         clipUrl: clipUrl,
         status: clip.status,
-        notes: clip.notes,
+        description: clip.description,
         createdAt: clip.createdAt,
         updatedAt: clip.updatedAt
       };
@@ -453,7 +453,7 @@ export const getSingleVideoClip = async (req, res) => {
       duration: clip.duration,
       clipUrl: clipUrl,
       status: clip.status,
-      notes: clip.notes,
+      description: clip.description,
       createdAt: clip.createdAt,
       updatedAt: clip.updatedAt
     };

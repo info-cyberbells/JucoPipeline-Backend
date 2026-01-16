@@ -59,6 +59,11 @@ const videoClipSchema = new mongoose.Schema(
       type: String,
       enum: ["processing", "ready", "failed"],
       default: "processing"
+    },
+    description: {
+      type: String,
+      trim: true,
+      maxlength: 1000
     }
   },
   {

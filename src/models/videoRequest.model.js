@@ -14,7 +14,7 @@ const videoRequestSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ["pending", "approved", "rejected", "completed"],
+            enum: ["pending", "approved", "rejected"],
             default: "pending"
         },
         note: {
