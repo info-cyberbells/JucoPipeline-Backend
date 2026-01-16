@@ -67,6 +67,14 @@ const normalizeSeasonYear = (year) => {
   return baseYear;
 };
 
+const buildRange = (min, max, isFloat = false) => {
+  if (min === undefined && max === undefined) return null;
+  const range = {};
+  if (min !== undefined) range.$gte = isFloat ? parseFloat(min) : parseInt(min);
+  if (max !== undefined) range.$lte = isFloat ? parseFloat(max) : parseInt(max);
+  return range;
+};
+
 export const getTeamRoster = async (req, res) => {
   try {
     const coachId = req.user.id;
@@ -78,7 +86,64 @@ export const getTeamRoster = async (req, res) => {
       seasonYear,
       sortBy = "firstName",
       sortOrder = "asc",
-      search
+      search,
+
+      // === BATTING FILTERS ===
+      batting_average_min,
+      batting_average_max,
+      on_base_percentage_min,
+      on_base_percentage_max,
+      slugging_percentage_min,
+      slugging_percentage_max,
+      home_runs_min,
+      home_runs_max,
+      rbi_min,
+      rbi_max,
+      hits_min,
+      hits_max,
+      runs_min,
+      runs_max,
+      doubles_min,
+      doubles_max,
+      triples_min,
+      triples_max,
+      walks_min,
+      walks_max,
+      strikeouts_min,
+      strikeouts_max,
+      stolen_bases_min,
+      stolen_bases_max,
+      
+      // === PITCHING FILTERS ===
+      era_min,
+      era_max,
+      wins_min,
+      wins_max,
+      losses_min,
+      losses_max,
+      strikeouts_pitched_min,
+      strikeouts_pitched_max,
+      innings_pitched_min,
+      innings_pitched_max,
+      walks_allowed_min,
+      walks_allowed_max,
+      hits_allowed_min,
+      hits_allowed_max,
+      saves_min,
+      saves_max,
+      
+      // === FIELDING FILTERS ===
+      fielding_percentage_min,
+      fielding_percentage_max,
+      errors_min,
+      errors_max,
+      putouts_min,
+      putouts_max,
+      assists_min,
+      assists_max,
+      double_plays_min,
+      double_plays_max
+
     } = req.query;
 
     if (!mongoose.Types.ObjectId.isValid(teamId)) {
@@ -87,7 +152,6 @@ export const getTeamRoster = async (req, res) => {
 
     const baseURL = `${req.protocol}://${req.get("host")}`;
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    // const baseYear = normalizeSeasonYear(seasonYear);
     const baseYear = seasonYear ? normalizeSeasonYear(seasonYear) : null;
 
 
@@ -117,59 +181,6 @@ export const getTeamRoster = async (req, res) => {
       ];
     }
 
-    // const pipeline = [
-    //   { $match: matchStage },
-
-    //   // LOOKUP TEAM DATA
-    //   {
-    //     $lookup: {
-    //       from: "teams", // Collection name (usually plural and lowercase)
-    //       localField: "team",
-    //       foreignField: "_id",
-    //       as: "team"
-    //     }
-    //   },
-
-    //   // UNWIND TEAM DATA (convert array to object)
-    //   {
-    //     $unwind: {
-    //       path: "$team",
-    //       preserveNullAndEmptyArrays: true // Keep players even if team not found
-    //     }
-    //   },
-
-    //   // Filter stats by season
-    //   {
-    //     $addFields: {
-    //       battingStats: {
-    //         $filter: {
-    //           input: "$battingStats",
-    //           as: "stat",
-    //           cond: { $regexMatch: { input: "$$stat.seasonYear", regex: `^${baseYear}` } }
-    //         }
-    //       },
-    //       fieldingStats: {
-    //         $filter: {
-    //           input: "$fieldingStats",
-    //           as: "stat",
-    //           cond: { $regexMatch: { input: "$$stat.seasonYear", regex: `^${baseYear}` } }
-    //         }
-    //       },
-    //       pitchingStats: {
-    //         $filter: {
-    //           input: "$pitchingStats",
-    //           as: "stat",
-    //           cond: { $regexMatch: { input: "$$stat.seasonYear", regex: `^${baseYear}` } }
-    //         }
-    //       }
-    //     }
-    //   },
-
-    //   { $sort: { [sortBy]: sortOrder === "asc" ? 1 : -1 } },
-    //   { $skip: skip },
-    //   { $limit: parseInt(limit) }
-    // ];
-
     const pipeline = [
       { $match: matchStage },
 
@@ -189,8 +200,6 @@ export const getTeamRoster = async (req, res) => {
         }
       }
     ];
-
-    // console.log("baseYear:", baseYear);
 
     // Apply season filtering ONLY if seasonYear is provided
     if (seasonYear && seasonYear !== "all") {
@@ -234,6 +243,120 @@ export const getTeamRoster = async (req, res) => {
           }
         }
       });
+    }
+
+    // Batting Stats Filter
+    if (seasonYear && seasonYear !== "all") {
+      const elem = { seasonYear: { $regex: `^${baseYear}` } };
+
+      const avgRange = buildRange(batting_average_min, batting_average_max, true);
+      if (avgRange) elem.batting_average = avgRange;
+
+      const onBasePercentage = buildRange(on_base_percentage_min, on_base_percentage_max, true);
+      if (onBasePercentage) elem.on_base_percentage = onBasePercentage;
+
+      const sluggingPercentage = buildRange(slugging_percentage_min, slugging_percentage_max, true);
+      if (sluggingPercentage) elem.slugging_percentage = sluggingPercentage;
+
+      const rbi = buildRange(rbi_min, rbi_max, true);
+      if (rbi) elem.rbi = rbi;
+
+      const homeRuns = buildRange(home_runs_min, home_runs_max, true);
+      if (homeRuns) elem.home_runs = homeRuns;
+
+      const bHits = buildRange(hits_min, hits_max);
+      if (bHits) elem.hits = bHits;
+
+      const bRuns = buildRange(runs_min, runs_max);
+      if (bRuns) elem.runs = bRuns;
+
+      const bDoubles = buildRange(doubles_min, doubles_max);
+      if (bDoubles) elem.doubles = bDoubles;
+
+      const bTriples = buildRange(triples_min, triples_max);
+      if (bTriples) elem.triples = bTriples;
+
+      const bWalks = buildRange(walks_min, walks_max);
+      if (bWalks) elem.walks = bWalks;
+
+      const bStrikeouts = buildRange(strikeouts_min, strikeouts_max);
+      if (bStrikeouts) elem.strikeouts = bStrikeouts;
+
+      const stolenBases = buildRange(stolen_bases_min, stolen_bases_max);
+      if (stolenBases) elem.stolen_bases = stolenBases;
+
+      if (Object.keys(elem).length > 1) {
+        pipeline.push({
+          $match: {
+            battingStats: { $elemMatch: elem }
+          }
+        });
+      }
+    }
+
+    // Pitching Stats Filter
+    if (seasonYear && seasonYear !== "all") {
+      const elem = { seasonYear: { $regex: `^${baseYear}` } };
+
+      const eraRange = buildRange(era_min, era_max, true);
+      if (eraRange) elem.era = eraRange;
+
+      const pWins = buildRange(wins_min, wins_max, true);
+      if (pWins) elem.wins = pWins;
+
+      const pLosses = buildRange(losses_min, losses_max, true);
+      if (pLosses) elem.losses = pLosses;
+
+      const strikeoutsPitched = buildRange(strikeouts_pitched_min, strikeouts_pitched_max, true);
+      if (strikeoutsPitched) elem.strikeouts_pitched = strikeoutsPitched;
+
+      const inningsPitchedMin = buildRange(innings_pitched_min, innings_pitched_max, true);
+      if (inningsPitchedMin) elem.innings_pitched = inningsPitchedMin;
+
+      const walksAllowed = buildRange(walks_allowed_min, walks_allowed_max, true);
+      if (walksAllowed) elem.walks_allowed = walksAllowed;
+
+      const hitsAllowed = buildRange(hits_allowed_min, hits_allowed_max, true);
+      if (hitsAllowed) elem.hits_allowed = hitsAllowed;
+
+      const savesMin = buildRange(saves_min, saves_max, true);
+      if (savesMin) elem.saves = savesMin;
+
+      if (Object.keys(elem).length > 1) {
+        pipeline.push({
+          $match: {
+            pitchingStats: { $elemMatch: elem }
+          }
+        });
+      }
+    }
+
+    // Fielding Stats Filter
+    if (seasonYear && seasonYear !== "all") {
+      const elem = { seasonYear: { $regex: `^${baseYear}` } };
+
+      const fpRange = buildRange(fielding_percentage_min, fielding_percentage_max, true);
+      if (fpRange) elem.fielding_percentage = fpRange;
+
+      const errRange = buildRange(errors_min, errors_max);
+      if (errRange) elem.errors = errRange;
+
+      const fPutouts = buildRange(putouts_min, putouts_min);
+      if (fPutouts) elem.putouts = fPutouts;
+
+      const fAssists = buildRange(assists_min, assists_max);
+      if (fAssists) elem.assists = fAssists;
+
+      const doublePlays = buildRange(double_plays_min, double_plays_max);
+      if (doublePlays) elem.double_plays = doublePlays;
+
+      if (Object.keys(elem).length > 1) {
+        pipeline.push({
+          $match: {
+            fieldingStats: { $elemMatch: elem }
+          }
+        });
+      }
     }
 
 
@@ -287,22 +410,22 @@ export const getTeamRoster = async (req, res) => {
       };
     }
 
-   const playersWithTeamLogo = formattedPlayers.map(player => {
-  if (player.team?.logo) {
-    return {
-      ...player,
-      team: {
-        ...player.team,
-        logo: `${baseURL}${player.team.logo}`
+    const playersWithTeamLogo = formattedPlayers.map(player => {
+      if (player.team?.logo) {
+        return {
+          ...player,
+          team: {
+            ...player.team,
+            logo: `${baseURL}${player.team.logo}`
+          }
+        };
       }
-    };
-  }
-  return player;
-});
+      return player;
+    });
 
     res.json({
       message: "Team roster retrieved successfully",
-      team: teamInfo, // Team information
+      team: teamInfo,
       players: playersWithTeamLogo,
       pagination: {
         currentPage: parseInt(page),

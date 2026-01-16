@@ -20,171 +20,6 @@ const formatUserData = (user, baseURL) => {
   return userData;
 };
 
-// COACH DASHBOARD
-export const getCoachDashboardOLDDDDDDD = async (req, res) => {
-  try {
-    const coachId = req.user.id;
-    const {
-      page = 1,
-      limit = 20,
-      statsType = "batting", // batting, pitching, fielding
-      sortBy = "batting_average",
-      sortOrder = "desc"
-    } = req.query;
-
-    const baseURL = `${req.protocol}://${req.get("host")}`;
-
-    // 1. Get coach details
-    const coach = await User.findById(coachId).select("-password");
-
-    if (!coach || coach.role !== "coach") {
-      return res.status(403).json({ message: "Access denied. Coach role required." });
-    }
-
-    // 2. Get follow counts
-    const [followersCount, followingCount] = await Promise.all([
-      Follow.countDocuments({ following: coachId }),
-      Follow.countDocuments({ follower: coachId })
-    ]);
-
-    // 3. Get list of players coach is following
-    const followingList = await Follow.find({ follower: coachId }).distinct('following');
-
-    // 4. Get followed players with stats (for dashboard table)
-    let followedPlayersData = {
-      players: [],
-      pagination: {
-        currentPage: 1,
-        totalPages: 0,
-        totalCount: 0,
-        limit: parseInt(limit),
-        hasMore: false
-      }
-    };
-
-    if (followingList.length > 0) {
-      const skip = (parseInt(page) - 1) * parseInt(limit);
-      const sortOptions = {};
-
-      // Build sort options based on stats type
-      if (statsType === "batting") {
-        sortOptions[`battingStats.0.${sortBy}`] = sortOrder === "asc" ? 1 : -1;
-      } else if (statsType === "pitching") {
-        sortOptions[`pitchingStats.0.${sortBy}`] = sortOrder === "asc" ? 1 : -1;
-      } else if (statsType === "fielding") {
-        sortOptions[`fieldingStats.0.${sortBy}`] = sortOrder === "asc" ? 1 : -1;
-      }
-
-      const [players, totalCount] = await Promise.all([
-        User.find({
-          _id: { $in: followingList },
-          role: "player"
-        })
-          .select("firstName lastName email teamName position jerseyNumber profileImage battingStats pitchingStats fieldingStats videos") // Added videos
-          .sort(sortOptions)
-          .skip(skip)
-          .limit(parseInt(limit)),
-        User.countDocuments({
-          _id: { $in: followingList },
-          role: "player"
-        })
-      ]);
-
-      const formattedPlayers = players.map(player => {
-        const userData = formatUserData(player, baseURL);
-
-        // Get latest stats
-        const latestBattingStats = userData.battingStats?.[0] || {};
-        const latestPitchingStats = userData.pitchingStats?.[0] || {};
-        const latestFieldingStats = userData.fieldingStats?.[0] || {};
-
-        // Format videos with full URLs
-        const formattedVideos = userData.videos && userData.videos.length > 0
-          ? userData.videos.map(video => ({
-            _id: video._id,
-            url: video.url.startsWith("http") ? video.url : `${baseURL}${video.url}`,
-            title: video.title,
-            uploadedAt: video.uploadedAt,
-            fileSize: video.fileSize,
-            duration: video.duration
-          }))
-          : [];
-
-        return {
-          _id: userData._id,
-          name: `${userData.firstName} ${userData.lastName}`,
-          position: userData.position || "N/A",
-          team: userData.teamName || "N/A",
-          class: latestBattingStats.seasonYear || latestPitchingStats.seasonYear || latestFieldingStats.seasonYear || "N/A",
-          profileImage: userData.profileImage,
-          battingStats: latestBattingStats,
-          pitchingStats: latestPitchingStats,
-          fieldingStats: latestFieldingStats,
-          videos: formattedVideos // Added videos array
-        };
-      });
-
-      followedPlayersData = {
-        players: formattedPlayers,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(totalCount / parseInt(limit)),
-          totalCount,
-          limit: parseInt(limit),
-          hasMore: skip + formattedPlayers.length < totalCount
-        }
-      };
-    }
-
-    // 5. Get suggested profiles (10 players)
-    const suggestedPlayers = await User.find({
-      role: "player",
-      registrationStatus: "approved",
-      isActive: true,
-      _id: { $ne: coachId, $nin: followingList }
-    })
-      .select("firstName lastName email teamName position jerseyNumber profileImage profileCompleteness")
-      .limit(10)
-      .sort({ profileCompleteness: -1, createdAt: -1 });
-
-    const formattedSuggestions = suggestedPlayers.map(player => formatUserData(player, baseURL));
-
-    // 6. Get top players (for "Follow the Top Players" section)
-    const topPlayers = await User.find({
-      role: "player",
-      registrationStatus: "approved",
-      isActive: true,
-      _id: { $ne: coachId, $nin: followingList }
-    })
-      .select("firstName lastName email teamName position jerseyNumber profileImage profileCompleteness")
-      .sort({ profileCompleteness: -1 })
-      .limit(10);
-
-    const formattedTopPlayers = topPlayers.map(player => formatUserData(player, baseURL));
-
-    // Combine all data
-    const coachData = formatUserData(coach, baseURL);
-
-    res.json({
-      message: "Coach dashboard retrieved successfully",
-      dashboard: {
-        coach: {
-          ...coachData,
-          followersCount,
-          followingCount
-        },
-        suggestions: formattedSuggestions,
-        topPlayers: formattedTopPlayers,
-        followedPlayers: followedPlayersData.players,
-        pagination: followedPlayersData.pagination
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-
 const POSITION_DETAIL_MAP = {
   P: "Pitcher",
 
@@ -208,7 +43,8 @@ const POSITION_DETAIL_MAP = {
   "OF RHP": "Outfielder Right-Handed Pitcher",
 };
 
-export const getCoachDashboard = async (req, res) => {
+// COACH DASHBOARD
+export const getCoachDashboardOLDFILTERS = async (req, res) => {
   try {
     const coachId = req.user.id;
     const {
@@ -277,23 +113,22 @@ export const getCoachDashboard = async (req, res) => {
 
     const baseURL = `${req.protocol}://${req.get("host")}`;
 
-    // 1. Get coach details
+    // Get coach details
     const coach = await User.findById(coachId).select("-password");
-
     if (!coach || coach.role !== "coach") {
       return res.status(403).json({ message: "Access denied. Coach role required." });
     }
 
-    // 2. Get follow counts
+    // Get follow counts
     const [followersCount, followingCount] = await Promise.all([
       Follow.countDocuments({ following: coachId }),
       Follow.countDocuments({ follower: coachId })
     ]);
 
-    // 3. Get list of players coach is following
+    // Get list of players coach is following
     const followingList = await Follow.find({ follower: coachId }).distinct('following');
 
-    // 4. Get followed players with stats and filters
+    // Get followed players with stats and filters
     let followedPlayersData = {
       players: [],
       pagination: {
@@ -308,13 +143,13 @@ export const getCoachDashboard = async (req, res) => {
     if (followingList.length > 0) {
       const skip = (parseInt(page) - 1) * parseInt(limit);
 
-      // === BUILD FILTER QUERY ===
+      // BUILD FILTER QUERY
       const filterQuery = {
         _id: { $in: followingList },
         role: "player"
       };
 
-      // === APPLY BATTING FILTERS ===
+      // APPLY BATTING FILTERS
       if (statsType === "batting") {
         // Batting Average Filter
         if (batting_average_min || batting_average_max) {
@@ -449,7 +284,7 @@ export const getCoachDashboard = async (req, res) => {
         }
       }
 
-      // === APPLY PITCHING FILTERS ===
+      // APPLY PITCHING FILTERS
       if (statsType === "pitching") {
         // ERA Filter
         if (era_min || era_max) {
@@ -540,7 +375,7 @@ export const getCoachDashboard = async (req, res) => {
         }
       }
 
-      // === APPLY FIELDING FILTERS ===
+      // APPLY FIELDING FILTERS
       if (statsType === "fielding") {
         // Fielding Percentage Filter
         if (fielding_percentage_min || fielding_percentage_max) {
@@ -679,7 +514,7 @@ export const getCoachDashboard = async (req, res) => {
       };
     }
 
-    // 5. Get suggested profiles (unchanged)
+    // 5. Get suggested profiles
     const suggestedPlayers = await User.find({
       role: "player",
       registrationStatus: "approved",
@@ -693,7 +528,7 @@ export const getCoachDashboard = async (req, res) => {
 
     const formattedSuggestions = suggestedPlayers.map(player => formatUserData(player, baseURL));
 
-    // 6. Get top players (unchanged)
+    // 6. Get top players
     const topPlayers = await User.find({
       role: "player",
       registrationStatus: "approved",
@@ -728,7 +563,363 @@ export const getCoachDashboard = async (req, res) => {
   }
 };
 
+export const getCoachDashboard = async (req, res) => {
+  try {
+    const coachId = req.user.id;
+    const { seasonYear } = req.query;
+    const {
+      page = 1,
+      limit = 20,
+      statsType, // batting, pitching, fielding
+      // === BATTING FILTERS ===
+      batting_average_min,
+      batting_average_max,
+      on_base_percentage_min,
+      on_base_percentage_max,
+      slugging_percentage_min,
+      slugging_percentage_max,
+      home_runs_min,
+      home_runs_max,
+      rbi_min,
+      rbi_max,
+      hits_min,
+      hits_max,
+      runs_min,
+      runs_max,
+      doubles_min,
+      doubles_max,
+      triples_min,
+      triples_max,
+      walks_min,
+      walks_max,
+      strikeouts_min,
+      strikeouts_max,
+      stolen_bases_min,
+      stolen_bases_max,
+      // === PITCHING FILTERS ===
+      era_min,
+      era_max,
+      wins_min,
+      wins_max,
+      losses_min,
+      losses_max,
+      strikeouts_pitched_min,
+      strikeouts_pitched_max,
+      innings_pitched_min,
+      innings_pitched_max,
+      walks_allowed_min,
+      walks_allowed_max,
+      hits_allowed_min,
+      hits_allowed_max,
+      saves_min,
+      saves_max,
+      // === FIELDING FILTERS ===
+      fielding_percentage_min,
+      fielding_percentage_max,
+      errors_min,
+      errors_max,
+      putouts_min,
+      putouts_max,
+      assists_min,
+      assists_max,
+      double_plays_min,
+      double_plays_max
+    } = req.query;
 
+    const buildElemMatch = (seasonYear) => {
+      return seasonYear ? { seasonYear: seasonYear } : {};
+    };
+    const baseURL = `${req.protocol}://${req.get("host")}`;
+    const coach = await User.findById(coachId).select("-password");
+    if (!coach || coach.role !== "coach") {
+      return res.status(403).json({ message: "Access denied. Coach role required." });
+    }
+
+    // Get follow counts
+    const [followersCount, followingCount] = await Promise.all([
+      Follow.countDocuments({ following: coachId }),
+      Follow.countDocuments({ follower: coachId })
+    ]);
+
+    // Get list of players coach is following
+    const followingList = await Follow.find({ follower: coachId }).distinct('following');
+
+    // Get followed players with stats and filters
+    let followedPlayersData = {
+      players: [],
+      pagination: {
+        currentPage: 1,
+        totalPages: 0,
+        totalCount: 0,
+        limit: parseInt(limit),
+        hasMore: false
+      }
+    };
+
+    if (followingList.length > 0) {
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+
+      // === BUILD FILTER QUERY ===
+      const filterQuery = {
+        _id: { $in: followingList },
+        role: "player"
+      };
+
+      // === APPLY BATTING FILTERS ===
+      if (statsType === "batting") {
+        const elem = buildElemMatch(seasonYear);
+
+        if (batting_average_min || batting_average_max) {
+          elem.batting_average = {};
+          if (batting_average_min) elem.batting_average.$gte = parseFloat(batting_average_min);
+          if (batting_average_max) elem.batting_average.$lte = parseFloat(batting_average_max);
+        }
+
+        if (on_base_percentage_min || on_base_percentage_max) {
+          elem.on_base_percentage = {};
+          if (on_base_percentage_min) elem.on_base_percentage.$gte = parseFloat(on_base_percentage_min);
+          if (on_base_percentage_max) elem.on_base_percentage.$lte = parseFloat(on_base_percentage_max);
+        }
+
+        if (slugging_percentage_min || slugging_percentage_max) {
+          elem.slugging_percentage = {};
+          if (slugging_percentage_min) elem.slugging_percentage.$gte = parseFloat(slugging_percentage_min);
+          if (slugging_percentage_max) elem.slugging_percentage.$lte = parseFloat(slugging_percentage_max);
+        }
+
+        if (home_runs_min || home_runs_max) {
+          elem.home_runs = {};
+          if (home_runs_min) elem.home_runs.$gte = parseInt(home_runs_min);
+          if (home_runs_max) elem.home_runs.$lte = parseInt(home_runs_max);
+        }
+
+        if (rbi_min || rbi_max) {
+          elem.rbi = {};
+          if (rbi_min) elem.rbi.$gte = parseInt(rbi_min);
+          if (rbi_max) elem.rbi.$lte = parseInt(rbi_max);
+        }
+
+        if (hits_min || hits_max) {
+          elem.hits = {};
+          if (hits_min) elem.hits.$gte = parseInt(hits_min);
+          if (hits_max) elem.hits.$lte = parseInt(hits_max);
+        }
+
+        if (runs_min || runs_max) {
+          elem.runs = {};
+          if (runs_min) elem.runs.$gte = parseInt(runs_min);
+          if (runs_max) elem.runs.$lte = parseInt(runs_max);
+        }
+
+        if (doubles_min || doubles_max) {
+          elem.doubles = {};
+          if (doubles_min) elem.doubles.$gte = parseInt(doubles_min);
+          if (doubles_max) elem.doubles.$lte = parseInt(doubles_max);
+        }
+
+        if (triples_min || triples_max) {
+          elem.triples = {};
+          if (triples_min) elem.triples.$gte = parseInt(triples_min);
+          if (triples_max) elem.triples.$lte = parseInt(triples_max);
+        }
+
+        if (walks_min || walks_max) {
+          elem.walks = {};
+          if (walks_min) elem.walks.$gte = parseFloat(walks_min);
+          if (walks_max) elem.walks.$lte = parseFloat(walks_max);
+        }
+
+        if (strikeouts_min || strikeouts_max) {
+          elem.strikeouts = {};
+          if (strikeouts_min) elem.strikeouts.$gte = parseInt(strikeouts_min);
+          if (strikeouts_max) elem.strikeouts.$lte = parseInt(strikeouts_max);
+        }
+
+        if (stolen_bases_min || stolen_bases_max) {
+          elem.stolen_bases = {};
+          if (stolen_bases_min) elem.stolen_bases.$gte = parseInt(stolen_bases_min);
+          if (stolen_bases_max) elem.stolen_bases.$lte = parseInt(stolen_bases_max);
+        }
+
+        if (Object.keys(elem).length > (seasonYear ? 1 : 0)) {
+          filterQuery.battingStats = { $elemMatch: elem };
+        }
+      }
+
+      // === APPLY PITCHING FILTERS ===
+      if (statsType === "pitching") {
+        const elem = buildElemMatch(seasonYear);
+
+        if (era_min || era_max) {
+          elem.era = {};
+          if (era_min) elem.era.$gte = parseFloat(era_min);
+          if (era_max) elem.era.$lte = parseFloat(era_max);
+        }
+
+        if (wins_min || wins_max) {
+          elem.wins = {};
+          if (wins_min) elem.wins.$gte = parseInt(wins_min);
+          if (wins_max) elem.wins.$lte = parseInt(wins_max);
+        }
+
+        if (losses_min || losses_max) {
+          elem.losses = {};
+          if (losses_min) elem.losses.$gte = parseInt(losses_min);
+          if (losses_max) elem.losses.$lte = parseInt(losses_max);
+        }
+
+        if (strikeouts_pitched_min || strikeouts_pitched_max) {
+          elem.strikeouts_pitched = {};
+          if (strikeouts_pitched_min) elem.strikeouts_pitched.$gte = parseInt(strikeouts_pitched_min);
+          if (strikeouts_pitched_max) elem.strikeouts_pitched.$lte = parseInt(strikeouts_pitched_max);
+        }
+
+        if (innings_pitched_min || innings_pitched_max) {
+          elem.innings_pitched = {};
+          if (innings_pitched_min) elem.innings_pitched.$gte = parseFloat(innings_pitched_min);
+          if (innings_pitched_max) elem.innings_pitched.$lte = parseFloat(innings_pitched_max);
+        }
+
+        if (walks_allowed_min || walks_allowed_max) {
+          elem.walks_allowed = {};
+          if (walks_allowed_min) elem.walks_allowed.$gte = parseInt(walks_allowed_min);
+          if (walks_allowed_max) elem.walks_allowed.$lte = parseInt(walks_allowed_max);
+        }
+
+        if (hits_allowed_min || hits_allowed_max) {
+          elem.hits_allowed = {};
+          if (hits_allowed_min) elem.hits_allowed.$gte = parseInt(hits_allowed_min);
+          if (hits_allowed_max) elem.hits_allowed.$lte = parseInt(hits_allowed_max);
+        }
+
+        if (saves_min || saves_max) {
+          elem.saves = {};
+          if (saves_min) elem.saves.$gte = parseInt(saves_min);
+          if (saves_max) elem.saves.$lte = parseInt(saves_max);
+        }
+
+        if (Object.keys(elem).length > (seasonYear ? 1 : 0)) {
+          filterQuery.pitchingStats = { $elemMatch: elem };
+        }
+      }
+
+      // === APPLY FIELDING FILTERS ===
+      if (statsType === "fielding") {
+        const elem = buildElemMatch(seasonYear);
+
+        if (fielding_percentage_min || fielding_percentage_max) {
+          elem.fielding_percentage = {};
+          if (fielding_percentage_min) elem.fielding_percentage.$gte = parseFloat(fielding_percentage_min);
+          if (fielding_percentage_max) elem.fielding_percentage.$lte = parseFloat(fielding_percentage_max);
+        }
+
+        if (errors_min || errors_max) {
+          elem.errors = {};
+          if (errors_min) elem.errors.$gte = parseInt(errors_min);
+          if (errors_max) elem.errors.$lte = parseInt(errors_max);
+        }
+
+        if (putouts_min || putouts_max) {
+          elem.putouts = {};
+          if (putouts_min) elem.putouts.$gte = parseInt(putouts_min);
+          if (putouts_max) elem.putouts.$lte = parseInt(putouts_max);
+        }
+
+        if (assists_min || assists_max) {
+          elem.assists = {};
+          if (assists_min) elem.assists.$gte = parseInt(assists_min);
+          if (assists_max) elem.assists.$lte = parseInt(assists_max);
+        }
+
+        if (double_plays_min || double_plays_max) {
+          elem.double_plays = {};
+          if (double_plays_min) elem.double_plays.$gte = parseInt(double_plays_min);
+          if (double_plays_max) elem.double_plays.$lte = parseInt(double_plays_max);
+        }
+
+        if (Object.keys(elem).length > (seasonYear ? 1 : 0)) {
+          filterQuery.fieldingStats = { $elemMatch: elem };
+        }
+      }
+
+      // === EXECUTE QUERY WITH FILTERS ===
+      const [players, totalCount] = await Promise.all([User.find(filterQuery).populate('team', 'name logo location division').skip(skip).limit(parseInt(limit)),User.countDocuments(filterQuery)]);
+      const formattedPlayers = players.map(player => {
+        const userData = formatUserData(player, baseURL);
+        const positionCode = userData.position;
+        const positionDetailName = POSITION_DETAIL_MAP[positionCode] || "Unknown Position";
+
+        // Get latest stats (keep as arrays like roster API)
+        const battingStatsArray = userData.battingStats || [];
+        const pitchingStatsArray = userData.pitchingStats || [];
+        const fieldingStatsArray = userData.fieldingStats || [];
+
+        // Format videos with full URLs
+        const formattedVideos = userData.videos && userData.videos.length > 0
+          ? userData.videos.map(video => ({
+            _id: video._id,
+            url: video.url.startsWith("http") ? video.url : `${baseURL}${video.url}`,
+            title: video.title,
+            uploadedAt: video.uploadedAt,
+            fileSize: video.fileSize,
+            duration: video.duration
+          }))
+          : [];
+
+        return {
+          ...userData,
+          _id: userData._id,
+          name: `${userData.firstName} ${userData.lastName}`,
+          position: userData.position || "N/A",
+          positionDetailName,
+          team: userData.team || null,
+          class: battingStatsArray[0]?.seasonYear || pitchingStatsArray[0]?.seasonYear || fieldingStatsArray[0]?.seasonYear || "N/A",
+          profileImage: userData.profileImage,
+          battingStats: battingStatsArray,
+          pitchingStats: pitchingStatsArray,  
+          fieldingStats: fieldingStatsArray,
+          videos: formattedVideos
+        };
+      });
+
+      followedPlayersData = {
+        players: formattedPlayers,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(totalCount / parseInt(limit)),
+          totalCount,
+          limit: parseInt(limit),
+          hasMore: skip + formattedPlayers.length < totalCount
+        }
+      };
+    }
+
+    // Get suggested profiles
+    const suggestedPlayers = await User.find({role: "player", registrationStatus: "approved", isActive: true, _id: { $ne: coachId, $nin: followingList }}).populate('team', 'name logo location division').select("firstName lastName email position jerseyNumber profileImage profileCompleteness team").limit(10).sort({ profileCompleteness: -1, createdAt: -1 });
+    const formattedSuggestions = suggestedPlayers.map(player => formatUserData(player, baseURL));
+    // Get top players
+    const topPlayers = await User.find({role: "player", registrationStatus: "approved", isActive: true, _id: { $ne: coachId, $nin: followingList }}).populate('team', 'name logo location division').select("firstName lastName email position jerseyNumber profileImage profileCompleteness team").sort({ profileCompleteness: -1 }).limit(10);
+    const formattedTopPlayers = topPlayers.map(player => formatUserData(player, baseURL));
+
+    // Combine all data
+    const coachData = formatUserData(coach, baseURL);
+    res.json({
+      message: "Coach dashboard retrieved successfully",
+      coach: {
+        ...coachData,
+        followersCount,
+        followingCount
+      },
+      suggestions: formattedSuggestions,
+      topPlayers: formattedTopPlayers,
+      followedPlayers: followedPlayersData.players,
+      pagination: followedPlayersData.pagination
+    });
+  } catch (error) {
+    console.error("Coach Dashboard Error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // GET SUGGESTED PROFILES (Standalone)
 export const getSuggestedProfiles = async (req, res) => {

@@ -18,186 +18,39 @@ const formatUserData = (user, baseURL) => {
   return userData;
 };
 
-// COMBINED SCOUT DASHBOARD
-export const getScoutDashboardOLDWITHOUTFILTERS = async (req, res) => {
-  try {
-    const scoutId = req.user.id;
-    const {
-      page = 1,
-      limit = 10,
-      statsType = "batting", // batting, pitching, fielding
-      sortBy = "batting_average",
-      sortOrder = "desc"
-    } = req.query;
+const POSITION_DETAIL_MAP = {
+  P: "Pitcher",
 
-    const baseURL = `${req.protocol}://${req.get("host")}`;
+  RHP: "Right-Handed Pitcher",
+  LHP: "Left-Handed Pitcher",
 
-    // 1. Get scout details
-    const scout = await User.findById(scoutId)
-      .populate('team', 'name logo location division')
-      .select("-password");
+  C: "Catcher",
 
-    if (!scout || scout.role !== "scout") {
-      return res.status(403).json({ message: "Access denied. Scout role required." });
-    }
+  "1B": "First Baseman",
+  "2B": "Second Baseman",
+  SS: "Shortstop",
+  "3B": "Third Baseman",
 
-    // 2. Get follow counts
-    const [followersCount, followingCount] = await Promise.all([
-      Follow.countDocuments({ following: scoutId }),
-      Follow.countDocuments({ follower: scoutId })
-    ]);
+  LF: "Left Fielder",
+  CF: "Center Fielder",
+  RF: "Right Fielder",
 
-    // 3. Get list of players scout is following
-    const followingList = await Follow.find({ follower: scoutId }).distinct('following');
-
-    // 4. Get followed players with stats (for dashboard table)
-    let followedPlayersData = {
-      players: [],
-      pagination: {
-        currentPage: 1,
-        totalPages: 0,
-        totalCount: 0,
-        limit: parseInt(limit),
-        hasMore: false
-      }
-    };
-
-    if (followingList.length > 0) {
-      const skip = (parseInt(page) - 1) * parseInt(limit);
-      const sortOptions = {};
-
-      // Build sort options based on stats type
-      if (statsType === "batting") {
-        sortOptions[`battingStats.0.${sortBy}`] = sortOrder === "asc" ? 1 : -1;
-      } else if (statsType === "pitching") {
-        sortOptions[`pitchingStats.0.${sortBy}`] = sortOrder === "asc" ? 1 : -1;
-      } else if (statsType === "fielding") {
-        sortOptions[`fieldingStats.0.${sortBy}`] = sortOrder === "asc" ? 1 : -1;
-      }
-
-      const [players, totalCount] = await Promise.all([
-        User.find({
-          _id: { $in: followingList },
-          role: "player"
-        })
-          .populate('team', 'name logo location division')
-          .select("firstName lastName email position jerseyNumber profileImage battingStats pitchingStats fieldingStats videos team")
-          .sort(sortOptions)
-          .skip(skip)
-          .limit(parseInt(limit)),
-        User.countDocuments({
-          _id: { $in: followingList },
-          role: "player"
-        })
-      ]);
-
-      const formattedPlayers = players.map(player => {
-        const userData = formatUserData(player, baseURL);
-
-        // Get latest stats
-        const latestBattingStats = userData.battingStats?.[0] || {};
-        const latestPitchingStats = userData.pitchingStats?.[0] || {};
-        const latestFieldingStats = userData.fieldingStats?.[0] || {};
-
-        // Format videos with full URLs
-        const formattedVideos = userData.videos && userData.videos.length > 0
-          ? userData.videos.map(video => ({
-              _id: video._id,
-              url: video.url.startsWith("http") ? video.url : `${baseURL}${video.url}`,
-              title: video.title,
-              uploadedAt: video.uploadedAt,
-              fileSize: video.fileSize,
-              duration: video.duration
-            }))
-          : [];
-
-        return {
-          _id: userData._id,
-          name: `${userData.firstName} ${userData.lastName}`,
-          position: userData.position || "N/A",
-          team: userData.team?.name || "N/A",
-          teamLogo: userData.team?.logo || null,
-          class: latestBattingStats.seasonYear || latestPitchingStats.seasonYear || latestFieldingStats.seasonYear || "N/A",
-          profileImage: userData.profileImage,
-          battingStats: latestBattingStats,
-          pitchingStats: latestPitchingStats,
-          fieldingStats: latestFieldingStats,
-          videos: formattedVideos
-        };
-      });
-
-      followedPlayersData = {
-        players: formattedPlayers,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(totalCount / parseInt(limit)),
-          totalCount,
-          limit: parseInt(limit),
-          hasMore: skip + formattedPlayers.length < totalCount
-        }
-      };
-    }
-
-    // 5. Get suggested profiles (10 players)
-    const suggestedPlayers = await User.find({
-      role: "player",
-      registrationStatus: "approved",
-      isActive: true,
-      _id: { $ne: scoutId, $nin: followingList }
-    })
-      .populate('team', 'name logo location division')
-      .select("firstName lastName email position jerseyNumber profileImage profileCompleteness team")
-      .limit(10)
-      .sort({ profileCompleteness: -1, createdAt: -1 });
-
-    const formattedSuggestions = suggestedPlayers.map(player => formatUserData(player, baseURL));
-
-    // 6. Get top players (for "Follow the Top Players" section)
-    const topPlayers = await User.find({
-      role: "player",
-      registrationStatus: "approved",
-      isActive: true,
-      _id: { $ne: scoutId, $nin: followingList }
-    })
-      .populate('team', 'name logo location division')
-      .select("firstName lastName email position jerseyNumber profileImage profileCompleteness team")
-      .sort({ profileCompleteness: -1 })
-      .limit(10);
-
-    const formattedTopPlayers = topPlayers.map(player => formatUserData(player, baseURL));
-
-    // Combine all data
-    const scoutData = formatUserData(scout, baseURL);
-
-    res.json({
-      message: "Scout dashboard retrieved successfully",
-      dashboard: {
-        scout: {
-          ...scoutData,
-          followersCount,
-          followingCount
-        },
-        suggestions: formattedSuggestions,
-        topPlayers: formattedTopPlayers,
-        followedPlayers: followedPlayersData.players,
-        pagination: followedPlayersData.pagination
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  DH: "Designated Hitter",
+  INF: "Infielders",
+  OF: "Outfielders",
+  "OF RHP": "Outfielder Right-Handed Pitcher",
 };
 
-// COMBINED SCOUT DASHBOARD WITHFILTERS
+
+// SCOUT DASHBOARD
 export const getScoutDashboard = async (req, res) => {
   try {
     const scoutId = req.user.id;
+    const { seasonYear } = req.query;
     const {
       page = 1,
       limit = 10,
-      statsType = "batting", // batting, pitching, fielding
-      sortBy = "batting_average",
-      sortOrder = "desc",
+      statsType, // batting, pitching, fielding
       
       // === BATTING FILTERS ===
       batting_average_min,
@@ -256,6 +109,9 @@ export const getScoutDashboard = async (req, res) => {
       double_plays_max
     } = req.query;
 
+    const buildElemMatch = (seasonYear) => {
+      return seasonYear ? { seasonYear: seasonYear } : {};
+    };
     const baseURL = `${req.protocol}://${req.get("host")}`;
 
     // Get scout details
@@ -296,291 +152,192 @@ export const getScoutDashboard = async (req, res) => {
 
       // === APPLY BATTING FILTERS ===
       if (statsType === "batting") {
+        const elem = buildElemMatch(seasonYear);
+
         if (batting_average_min || batting_average_max) {
-          filterQuery['battingStats.0.batting_average'] = {};
-          if (batting_average_min) {
-            filterQuery['battingStats.0.batting_average'].$gte = parseFloat(batting_average_min);
-          }
-          if (batting_average_max) {
-            filterQuery['battingStats.0.batting_average'].$lte = parseFloat(batting_average_max);
-          }
+          elem.batting_average = {};
+          if (batting_average_min) elem.batting_average.$gte = parseFloat(batting_average_min);
+          if (batting_average_max) elem.batting_average.$lte = parseFloat(batting_average_max);
         }
 
         if (on_base_percentage_min || on_base_percentage_max) {
-          filterQuery['battingStats.0.on_base_percentage'] = {};
-          if (on_base_percentage_min) {
-            filterQuery['battingStats.0.on_base_percentage'].$gte = parseFloat(on_base_percentage_min);
-          }
-          if (on_base_percentage_max) {
-            filterQuery['battingStats.0.on_base_percentage'].$lte = parseFloat(on_base_percentage_max);
-          }
+          elem.on_base_percentage = {};
+          if (on_base_percentage_min) elem.on_base_percentage.$gte = parseFloat(on_base_percentage_min);
+          if (on_base_percentage_max) elem.on_base_percentage.$lte = parseFloat(on_base_percentage_max);
         }
 
         if (slugging_percentage_min || slugging_percentage_max) {
-          filterQuery['battingStats.0.slugging_percentage'] = {};
-          if (slugging_percentage_min) {
-            filterQuery['battingStats.0.slugging_percentage'].$gte = parseFloat(slugging_percentage_min);
-          }
-          if (slugging_percentage_max) {
-            filterQuery['battingStats.0.slugging_percentage'].$lte = parseFloat(slugging_percentage_max);
-          }
+          elem.slugging_percentage = {};
+          if (slugging_percentage_min) elem.slugging_percentage.$gte = parseFloat(slugging_percentage_min);
+          if (slugging_percentage_max) elem.slugging_percentage.$lte = parseFloat(slugging_percentage_max);
         }
 
         if (home_runs_min || home_runs_max) {
-          filterQuery['battingStats.0.home_runs'] = {};
-          if (home_runs_min) {
-            filterQuery['battingStats.0.home_runs'].$gte = parseInt(home_runs_min);
-          }
-          if (home_runs_max) {
-            filterQuery['battingStats.0.home_runs'].$lte = parseInt(home_runs_max);
-          }
+          elem.home_runs = {};
+          if (home_runs_min) elem.home_runs.$gte = parseInt(home_runs_min);
+          if (home_runs_max) elem.home_runs.$lte = parseInt(home_runs_max);
         }
 
         if (rbi_min || rbi_max) {
-          filterQuery['battingStats.0.rbi'] = {};
-          if (rbi_min) {
-            filterQuery['battingStats.0.rbi'].$gte = parseInt(rbi_min);
-          }
-          if (rbi_max) {
-            filterQuery['battingStats.0.rbi'].$lte = parseInt(rbi_max);
-          }
+          elem.rbi = {};
+          if (rbi_min) elem.rbi.$gte = parseInt(rbi_min);
+          if (rbi_max) elem.rbi.$lte = parseInt(rbi_max);
         }
 
         if (hits_min || hits_max) {
-          filterQuery['battingStats.0.hits'] = {};
-          if (hits_min) {
-            filterQuery['battingStats.0.hits'].$gte = parseInt(hits_min);
-          }
-          if (hits_max) {
-            filterQuery['battingStats.0.hits'].$lte = parseInt(hits_max);
-          }
+          elem.hits = {};
+          if (hits_min) elem.hits.$gte = parseInt(hits_min);
+          if (hits_max) elem.hits.$lte = parseInt(hits_max);
         }
 
         if (runs_min || runs_max) {
-          filterQuery['battingStats.0.runs'] = {};
-          if (runs_min) {
-            filterQuery['battingStats.0.runs'].$gte = parseInt(runs_min);
-          }
-          if (runs_max) {
-            filterQuery['battingStats.0.runs'].$lte = parseInt(runs_max);
-          }
+          elem.runs = {};
+          if (runs_min) elem.runs.$gte = parseInt(runs_min);
+          if (runs_max) elem.runs.$lte = parseInt(runs_max);
         }
 
         if (doubles_min || doubles_max) {
-          filterQuery['battingStats.0.doubles'] = {};
-          if (doubles_min) {
-            filterQuery['battingStats.0.doubles'].$gte = parseInt(doubles_min);
-          }
-          if (doubles_max) {
-            filterQuery['battingStats.0.doubles'].$lte = parseInt(doubles_max);
-          }
+          elem.doubles = {};
+          if (doubles_min) elem.doubles.$gte = parseInt(doubles_min);
+          if (doubles_max) elem.doubles.$lte = parseInt(doubles_max);
         }
 
         if (triples_min || triples_max) {
-          filterQuery['battingStats.0.triples'] = {};
-          if (triples_min) {
-            filterQuery['battingStats.0.triples'].$gte = parseInt(triples_min);
-          }
-          if (triples_max) {
-            filterQuery['battingStats.0.triples'].$lte = parseInt(triples_max);
-          }
+          elem.triples = {};
+          if (triples_min) elem.triples.$gte = parseInt(triples_min);
+          if (triples_max) elem.triples.$lte = parseInt(triples_max);
         }
 
         if (walks_min || walks_max) {
-          filterQuery['battingStats.0.walks'] = {};
-          if (walks_min) {
-            filterQuery['battingStats.0.walks'].$gte = parseInt(walks_min);
-          }
-          if (walks_max) {
-            filterQuery['battingStats.0.walks'].$lte = parseInt(walks_max);
-          }
+          elem.walks = {};
+          if (walks_min) elem.walks.$gte = parseFloat(walks_min);
+          if (walks_max) elem.walks.$lte = parseFloat(walks_max);
         }
 
         if (strikeouts_min || strikeouts_max) {
-          filterQuery['battingStats.0.strikeouts'] = {};
-          if (strikeouts_min) {
-            filterQuery['battingStats.0.strikeouts'].$gte = parseInt(strikeouts_min);
-          }
-          if (strikeouts_max) {
-            filterQuery['battingStats.0.strikeouts'].$lte = parseInt(strikeouts_max);
-          }
+          elem.strikeouts = {};
+          if (strikeouts_min) elem.strikeouts.$gte = parseInt(strikeouts_min);
+          if (strikeouts_max) elem.strikeouts.$lte = parseInt(strikeouts_max);
         }
 
         if (stolen_bases_min || stolen_bases_max) {
-          filterQuery['battingStats.0.stolen_bases'] = {};
-          if (stolen_bases_min) {
-            filterQuery['battingStats.0.stolen_bases'].$gte = parseInt(stolen_bases_min);
-          }
-          if (stolen_bases_max) {
-            filterQuery['battingStats.0.stolen_bases'].$lte = parseInt(stolen_bases_max);
-          }
+          elem.stolen_bases = {};
+          if (stolen_bases_min) elem.stolen_bases.$gte = parseInt(stolen_bases_min);
+          if (stolen_bases_max) elem.stolen_bases.$lte = parseInt(stolen_bases_max);
+        }
+
+        if (Object.keys(elem).length > (seasonYear ? 1 : 0)) {
+          filterQuery.battingStats = { $elemMatch: elem };
         }
       }
 
       // === APPLY PITCHING FILTERS ===
       if (statsType === "pitching") {
+        const elem = buildElemMatch(seasonYear);
+
         if (era_min || era_max) {
-          filterQuery['pitchingStats.0.era'] = {};
-          if (era_min) {
-            filterQuery['pitchingStats.0.era'].$gte = parseFloat(era_min);
-          }
-          if (era_max) {
-            filterQuery['pitchingStats.0.era'].$lte = parseFloat(era_max);
-          }
+          elem.era = {};
+          if (era_min) elem.era.$gte = parseFloat(era_min);
+          if (era_max) elem.era.$lte = parseFloat(era_max);
         }
 
         if (wins_min || wins_max) {
-          filterQuery['pitchingStats.0.wins'] = {};
-          if (wins_min) {
-            filterQuery['pitchingStats.0.wins'].$gte = parseInt(wins_min);
-          }
-          if (wins_max) {
-            filterQuery['pitchingStats.0.wins'].$lte = parseInt(wins_max);
-          }
+          elem.wins = {};
+          if (wins_min) elem.wins.$gte = parseInt(wins_min);
+          if (wins_max) elem.wins.$lte = parseInt(wins_max);
         }
 
         if (losses_min || losses_max) {
-          filterQuery['pitchingStats.0.losses'] = {};
-          if (losses_min) {
-            filterQuery['pitchingStats.0.losses'].$gte = parseInt(losses_min);
-          }
-          if (losses_max) {
-            filterQuery['pitchingStats.0.losses'].$lte = parseInt(losses_max);
-          }
+          elem.losses = {};
+          if (losses_min) elem.losses.$gte = parseInt(losses_min);
+          if (losses_max) elem.losses.$lte = parseInt(losses_max);
         }
 
         if (strikeouts_pitched_min || strikeouts_pitched_max) {
-          filterQuery['pitchingStats.0.strikeouts_pitched'] = {};
-          if (strikeouts_pitched_min) {
-            filterQuery['pitchingStats.0.strikeouts_pitched'].$gte = parseInt(strikeouts_pitched_min);
-          }
-          if (strikeouts_pitched_max) {
-            filterQuery['pitchingStats.0.strikeouts_pitched'].$lte = parseInt(strikeouts_pitched_max);
-          }
+          elem.strikeouts_pitched = {};
+          if (strikeouts_pitched_min) elem.strikeouts_pitched.$gte = parseInt(strikeouts_pitched_min);
+          if (strikeouts_pitched_max) elem.strikeouts_pitched.$lte = parseInt(strikeouts_pitched_max);
         }
 
         if (innings_pitched_min || innings_pitched_max) {
-          filterQuery['pitchingStats.0.innings_pitched'] = {};
-          if (innings_pitched_min) {
-            filterQuery['pitchingStats.0.innings_pitched'].$gte = parseFloat(innings_pitched_min);
-          }
-          if (innings_pitched_max) {
-            filterQuery['pitchingStats.0.innings_pitched'].$lte = parseFloat(innings_pitched_max);
-          }
+          elem.innings_pitched = {};
+          if (innings_pitched_min) elem.innings_pitched.$gte = parseFloat(innings_pitched_min);
+          if (innings_pitched_max) elem.innings_pitched.$lte = parseFloat(innings_pitched_max);
         }
 
         if (walks_allowed_min || walks_allowed_max) {
-          filterQuery['pitchingStats.0.walks_allowed'] = {};
-          if (walks_allowed_min) {
-            filterQuery['pitchingStats.0.walks_allowed'].$gte = parseInt(walks_allowed_min);
-          }
-          if (walks_allowed_max) {
-            filterQuery['pitchingStats.0.walks_allowed'].$lte = parseInt(walks_allowed_max);
-          }
+          elem.walks_allowed = {};
+          if (walks_allowed_min) elem.walks_allowed.$gte = parseInt(walks_allowed_min);
+          if (walks_allowed_max) elem.walks_allowed.$lte = parseInt(walks_allowed_max);
         }
 
         if (hits_allowed_min || hits_allowed_max) {
-          filterQuery['pitchingStats.0.hits_allowed'] = {};
-          if (hits_allowed_min) {
-            filterQuery['pitchingStats.0.hits_allowed'].$gte = parseInt(hits_allowed_min);
-          }
-          if (hits_allowed_max) {
-            filterQuery['pitchingStats.0.hits_allowed'].$lte = parseInt(hits_allowed_max);
-          }
+          elem.hits_allowed = {};
+          if (hits_allowed_min) elem.hits_allowed.$gte = parseInt(hits_allowed_min);
+          if (hits_allowed_max) elem.hits_allowed.$lte = parseInt(hits_allowed_max);
         }
 
         if (saves_min || saves_max) {
-          filterQuery['pitchingStats.0.saves'] = {};
-          if (saves_min) {
-            filterQuery['pitchingStats.0.saves'].$gte = parseInt(saves_min);
-          }
-          if (saves_max) {
-            filterQuery['pitchingStats.0.saves'].$lte = parseInt(saves_max);
-          }
+          elem.saves = {};
+          if (saves_min) elem.saves.$gte = parseInt(saves_min);
+          if (saves_max) elem.saves.$lte = parseInt(saves_max);
+        }
+
+        if (Object.keys(elem).length > (seasonYear ? 1 : 0)) {
+          filterQuery.pitchingStats = { $elemMatch: elem };
         }
       }
 
       // === APPLY FIELDING FILTERS ===
       if (statsType === "fielding") {
+        const elem = buildElemMatch(seasonYear);
+
         if (fielding_percentage_min || fielding_percentage_max) {
-          filterQuery['fieldingStats.0.fielding_percentage'] = {};
-          if (fielding_percentage_min) {
-            filterQuery['fieldingStats.0.fielding_percentage'].$gte = parseFloat(fielding_percentage_min);
-          }
-          if (fielding_percentage_max) {
-            filterQuery['fieldingStats.0.fielding_percentage'].$lte = parseFloat(fielding_percentage_max);
-          }
+          elem.fielding_percentage = {};
+          if (fielding_percentage_min) elem.fielding_percentage.$gte = parseFloat(fielding_percentage_min);
+          if (fielding_percentage_max) elem.fielding_percentage.$lte = parseFloat(fielding_percentage_max);
         }
 
         if (errors_min || errors_max) {
-          filterQuery['fieldingStats.0.errors'] = {};
-          if (errors_min) {
-            filterQuery['fieldingStats.0.errors'].$gte = parseInt(errors_min);
-          }
-          if (errors_max) {
-            filterQuery['fieldingStats.0.errors'].$lte = parseInt(errors_max);
-          }
+          elem.errors = {};
+          if (errors_min) elem.errors.$gte = parseInt(errors_min);
+          if (errors_max) elem.errors.$lte = parseInt(errors_max);
         }
 
         if (putouts_min || putouts_max) {
-          filterQuery['fieldingStats.0.putouts'] = {};
-          if (putouts_min) {
-            filterQuery['fieldingStats.0.putouts'].$gte = parseInt(putouts_min);
-          }
-          if (putouts_max) {
-            filterQuery['fieldingStats.0.putouts'].$lte = parseInt(putouts_max);
-          }
+          elem.putouts = {};
+          if (putouts_min) elem.putouts.$gte = parseInt(putouts_min);
+          if (putouts_max) elem.putouts.$lte = parseInt(putouts_max);
         }
 
         if (assists_min || assists_max) {
-          filterQuery['fieldingStats.0.assists'] = {};
-          if (assists_min) {
-            filterQuery['fieldingStats.0.assists'].$gte = parseInt(assists_min);
-          }
-          if (assists_max) {
-            filterQuery['fieldingStats.0.assists'].$lte = parseInt(assists_max);
-          }
+          elem.assists = {};
+          if (assists_min) elem.assists.$gte = parseInt(assists_min);
+          if (assists_max) elem.assists.$lte = parseInt(assists_max);
         }
 
         if (double_plays_min || double_plays_max) {
-          filterQuery['fieldingStats.0.double_plays'] = {};
-          if (double_plays_min) {
-            filterQuery['fieldingStats.0.double_plays'].$gte = parseInt(double_plays_min);
-          }
-          if (double_plays_max) {
-            filterQuery['fieldingStats.0.double_plays'].$lte = parseInt(double_plays_max);
-          }
+          elem.double_plays = {};
+          if (double_plays_min) elem.double_plays.$gte = parseInt(double_plays_min);
+          if (double_plays_max) elem.double_plays.$lte = parseInt(double_plays_max);
+        }
+
+        if (Object.keys(elem).length > (seasonYear ? 1 : 0)) {
+          filterQuery.fieldingStats = { $elemMatch: elem };
         }
       }
 
-      // === BUILD SORT OPTIONS ===
-      const sortOptions = {};
-      if (statsType === "batting") {
-        sortOptions[`battingStats.0.${sortBy}`] = sortOrder === "asc" ? 1 : -1;
-      } else if (statsType === "pitching") {
-        sortOptions[`pitchingStats.0.${sortBy}`] = sortOrder === "asc" ? 1 : -1;
-      } else if (statsType === "fielding") {
-        sortOptions[`fieldingStats.0.${sortBy}`] = sortOrder === "asc" ? 1 : -1;
-      }
-
       // === EXECUTE QUERY WITH FILTERS ===
-      const [players, totalCount] = await Promise.all([
-        User.find(filterQuery)
-          .populate('team', 'name logo location division')
-          .select("firstName lastName email position jerseyNumber profileImage battingStats pitchingStats fieldingStats videos team")
-          .sort(sortOptions)
-          .skip(skip)
-          .limit(parseInt(limit)),
-        User.countDocuments(filterQuery)
-      ]);
-
+      const [players, totalCount] = await Promise.all([User.find(filterQuery).populate('team', 'name logo location division').skip(skip).limit(parseInt(limit)),User.countDocuments(filterQuery)]);
       const formattedPlayers = players.map(player => {
         const userData = formatUserData(player, baseURL);
+        const positionCode = userData.position;
+        const positionDetailName = POSITION_DETAIL_MAP[positionCode] || "Unknown Position";
 
         // Get latest stats
-        const latestBattingStats = userData.battingStats?.[0] || {};
-        const latestPitchingStats = userData.pitchingStats?.[0] || {};
-        const latestFieldingStats = userData.fieldingStats?.[0] || {};
+        const latestBattingStats = userData.battingStats || [];
+        const latestPitchingStats = userData.pitchingStats || [];
+        const latestFieldingStats = userData.fieldingStats || [];
 
         // Format videos with full URLs
         const formattedVideos = userData.videos && userData.videos.length > 0
@@ -595,11 +352,12 @@ export const getScoutDashboard = async (req, res) => {
           : [];
 
         return {
+          ...userData,
           _id: userData._id,
           name: `${userData.firstName} ${userData.lastName}`,
           position: userData.position || "N/A",
-          team: userData.team?.name || "N/A",
-          teamLogo: userData.team?.logo || null,
+          positionDetailName,
+          team: userData.team || null,
           class: latestBattingStats.seasonYear || latestPitchingStats.seasonYear || latestFieldingStats.seasonYear || "N/A",
           profileImage: userData.profileImage,
           battingStats: latestBattingStats,
@@ -624,7 +382,6 @@ export const getScoutDashboard = async (req, res) => {
     // Get suggested profiles
     const suggestedPlayers = await User.find({role: "player", registrationStatus: "approved", isActive: true, _id: { $ne: scoutId, $nin: followingList }}).populate('team', 'name logo location division').select("firstName lastName email position jerseyNumber profileImage profileCompleteness team").limit(10).sort({ profileCompleteness: -1, createdAt: -1 });
     const formattedSuggestions = suggestedPlayers.map(player => formatUserData(player, baseURL));
-
     // Get top players
     const topPlayers = await User.find({role: "player",registrationStatus: "approved",isActive: true,_id: { $ne: scoutId, $nin: followingList }}).populate('team', 'name logo location division').select("firstName lastName email position jerseyNumber profileImage profileCompleteness team").sort({ profileCompleteness: -1 }).limit(10);
     const formattedTopPlayers = topPlayers.map(player => formatUserData(player, baseURL));
@@ -634,17 +391,15 @@ export const getScoutDashboard = async (req, res) => {
 
     res.json({
       message: "Scout dashboard retrieved successfully",
-      dashboard: {
-        scout: {
-          ...scoutData,
-          followersCount,
-          followingCount
-        },
-        suggestions: formattedSuggestions,
-        topPlayers: formattedTopPlayers,
-        followedPlayers: followedPlayersData.players,
-        pagination: followedPlayersData.pagination
-      }
+      scout: {
+        ...scoutData,
+        followersCount,
+        followingCount
+      },
+      suggestions: formattedSuggestions,
+      topPlayers: formattedTopPlayers,
+      followedPlayers: followedPlayersData.players,
+      pagination: followedPlayersData.pagination
     });
   } catch (error) {
     console.error("Scout Dashboard Error:", error);

@@ -57,7 +57,6 @@ const calculateProfileCompleteness = (player) => {
 // Helper to format user data with full URLs
 const formatPlayerData = (player, baseURL) => {
   const playerData = player.toObject();
-  console.log('playerData', playerData)
   // Format profile image
   if (playerData.profileImage && !playerData.profileImage.startsWith("http")) {
     playerData.profileImage = `${baseURL}${playerData.profileImage}`;
@@ -1315,7 +1314,7 @@ export const getUncommittedPLayerSeasonYearRequired = async (req, res) => {
   }
 };
 
-const applyStatRange = (arrayField, statField, min, max) => {
+const applyStatRange = (filter, arrayField, statField, min, max) => {
   if (!min && !max) return;
 
   const range = {};
@@ -1445,35 +1444,35 @@ export const getUncommittedPLayer = async (req, res) => {
 
     // === BATTING FILTERS ===
     // const num = v => (v !== undefined ? Number(v) : undefined);
-    applyStatRange("battingStats", "batting_average", batting_average_min, batting_average_max);
-    applyStatRange("battingStats", "on_base_percentage", on_base_percentage_min, on_base_percentage_max);
-    applyStatRange("battingStats", "slugging_percentage", slugging_percentage_min, slugging_percentage_max);
-    applyStatRange("battingStats", "home_runs", home_runs_min, home_runs_max);
-    applyStatRange("battingStats", "rbi", rbi_min, rbi_max);
-    applyStatRange("battingStats", "hits", hits_min, hits_max);
-    applyStatRange("battingStats", "runs", runs_min, runs_max);
-    applyStatRange("battingStats", "doubles", doubles_min, doubles_max);
-    applyStatRange("battingStats", "triples", triples_min, triples_max);
-    applyStatRange("battingStats", "walks", walks_min, walks_max);
-    applyStatRange("battingStats", "strikeouts", strikeouts_min, strikeouts_max);
-    applyStatRange("battingStats", "stolen_bases", stolen_bases_min, stolen_bases_max);
+    applyStatRange(filter, "battingStats", "batting_average", batting_average_min, batting_average_max);
+    applyStatRange(filter, "battingStats", "on_base_percentage", on_base_percentage_min, on_base_percentage_max);
+    applyStatRange(filter, "battingStats", "slugging_percentage", slugging_percentage_min, slugging_percentage_max);
+    applyStatRange(filter, "battingStats", "home_runs", home_runs_min, home_runs_max);
+    applyStatRange(filter, "battingStats", "rbi", rbi_min, rbi_max);
+    applyStatRange(filter, "battingStats", "hits", hits_min, hits_max);
+    applyStatRange(filter, "battingStats", "runs", runs_min, runs_max);
+    applyStatRange(filter, "battingStats", "doubles", doubles_min, doubles_max);
+    applyStatRange(filter, "battingStats", "triples", triples_min, triples_max);
+    applyStatRange(filter, "battingStats", "walks", walks_min, walks_max);
+    applyStatRange(filter, "battingStats", "strikeouts", strikeouts_min, strikeouts_max);
+    applyStatRange(filter, "battingStats", "stolen_bases", stolen_bases_min, stolen_bases_max);
 
     // === PITCHING FILTERS ===
-    applyStatRange("pitchingStats", "era", era_min, era_max);
-    applyStatRange("pitchingStats", "wins", wins_min, wins_max);
-    applyStatRange("pitchingStats", "losses", losses_min, losses_max);
-    applyStatRange("pitchingStats", "strikeouts_pitched", strikeouts_pitched_min, strikeouts_pitched_max);
-    applyStatRange("pitchingStats", "innings_pitched", innings_pitched_min, innings_pitched_max);
-    applyStatRange("pitchingStats", "walks_allowed", walks_allowed_min, walks_allowed_max);
-    applyStatRange("pitchingStats", "hits_allowed", hits_allowed_min, hits_allowed_max);
-    applyStatRange("pitchingStats", "saves", saves_min, saves_max);
+    applyStatRange(filter, "pitchingStats", "era", era_min, era_max);
+    applyStatRange(filter, "pitchingStats", "wins", wins_min, wins_max);
+    applyStatRange(filter, "pitchingStats", "losses", losses_min, losses_max);
+    applyStatRange(filter, "pitchingStats", "strikeouts_pitched", strikeouts_pitched_min, strikeouts_pitched_max);
+    applyStatRange(filter, "pitchingStats", "innings_pitched", innings_pitched_min, innings_pitched_max);
+    applyStatRange(filter, "pitchingStats", "walks_allowed", walks_allowed_min, walks_allowed_max);
+    applyStatRange(filter, "pitchingStats", "hits_allowed", hits_allowed_min, hits_allowed_max);
+    applyStatRange(filter, "pitchingStats", "saves", saves_min, saves_max);
 
     // === FIELDING FILTERS ===
-    applyStatRange("fieldingStats", "fielding_percentage", fielding_percentage_min, fielding_percentage_max);
-    applyStatRange("fieldingStats", "errors", errors_min, errors_max);
-    applyStatRange("fieldingStats", "putouts", putouts_min, putouts_max);
-    applyStatRange("fieldingStats", "assists", assists_min, assists_max);
-    applyStatRange("fieldingStats", "double_plays", double_plays_min, double_plays_max);
+    applyStatRange(filter, "fieldingStats", "fielding_percentage", fielding_percentage_min, fielding_percentage_max);
+    applyStatRange(filter, "fieldingStats", "errors", errors_min, errors_max);
+    applyStatRange(filter, "fieldingStats", "putouts", putouts_min, putouts_max);
+    applyStatRange(filter, "fieldingStats", "assists", assists_min, assists_max);
+    applyStatRange(filter, "fieldingStats", "double_plays", double_plays_min, double_plays_max);
 
 
     // === FETCH DATA ===
@@ -1559,9 +1558,6 @@ export const getUncommittedPLayer = async (req, res) => {
 };
 
 
-/**
- * Player Statistics
-*/
 // Helper to format user data
 const formatUserData = (user, baseURL) => {
   const userData = user.toObject();
