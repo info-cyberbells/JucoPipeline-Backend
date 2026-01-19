@@ -1316,19 +1316,35 @@ export const getUncommittedPLayerSeasonYearRequired = async (req, res) => {
   }
 };
 
-const applyStatRange = (filter, arrayField, statField, min, max) => {
-  if (!min && !max) return;
+// const applyStatRange = (filter, arrayField, statField, min, max) => {
+//   if (!min && !max) return;
+
+//   const range = {};
+//   if (min) range.$gte = Number(min);
+//   if (max) range.$lte = Number(max);
+
+//   filter[arrayField] = {
+//     $elemMatch: {
+//       [statField]: range
+//     }
+//   };
+// };
+
+const applyStatRange = (filter, arrayField, statField, min, max, parser = Number) => {
+  if (min === undefined && max === undefined) return;
+
+  // ensure $elemMatch exists
+  if (!filter[arrayField]) {
+    filter[arrayField] = { $elemMatch: {} };
+  }
 
   const range = {};
-  if (min) range.$gte = Number(min);
-  if (max) range.$lte = Number(max);
+  if (min !== undefined) range.$gte = parser(min);
+  if (max !== undefined) range.$lte = parser(max);
 
-  filter[arrayField] = {
-    $elemMatch: {
-      [statField]: range
-    }
-  };
+  filter[arrayField].$elemMatch[statField] = range;
 };
+
 
 export const getUncommittedPLayer = async (req, res) => {
   try {
@@ -1365,6 +1381,35 @@ export const getUncommittedPLayer = async (req, res) => {
       stolen_bases_min,
       stolen_bases_max,
 
+      total_base_min,
+      total_base_max,
+      on_base_plus_slugging_min,
+      on_base_plus_slugging_max,
+      caught_stealing_min,
+      caught_stealing_max,
+      at_bats_min,
+      at_bats_max,
+      hit_by_min,
+      hit_by_max,
+      sacrifice_flie_min,
+      sacrifice_flie_max,
+      sacrifice_hit_min,
+      sacrifice_hit_max,
+      games_play_min,
+      games_play_max,
+      games_start_min,
+      games_start_max,
+      grounded_into_double_play_min,
+      grounded_into_double_play_max,
+      stolen_bases_against_min,
+      stolen_bases_against_max,
+      intentional_walk_min,
+      intentional_walk_max,
+      walk_percentage_min,
+      walk_percentage_max,
+      strikeout_percentage_min,
+      strikeout_percentage_max,
+
       // === PITCHING FILTERS ===
       era_min,
       era_max,
@@ -1383,6 +1428,41 @@ export const getUncommittedPLayer = async (req, res) => {
       saves_min,
       saves_max,
 
+      appearances_min,
+      appearances_max,
+      doubles_allow_min,
+      doubles_allow_max,
+      home_runs_allow_min,
+      home_runs_allow_max,
+      complete_game_min,
+      complete_game_max,
+      earn_run_min,
+      earn_run_max,
+      batting_average_against_min,
+      batting_average_against_max,
+      wild_pitche_min,
+      wild_pitche_max,
+      games_pitch_min,
+      games_pitch_max,
+      shutouts_min,
+      shutouts_max,
+      runs_allowed_min,
+      runs_allowed_max,
+      triples_allowed_min,
+      triples_allowed_max,
+      at_bats_against_min,
+      at_bats_against_max,
+      hit_batters_min,
+      hit_batters_max,
+      balks_min,
+      balks_max,
+      sacrifice_flies_allowed_min,
+      sacrifice_flies_allowed_max,
+      sacrifice_hits_allowed_min,
+      sacrifice_hits_allowed_max,
+      batting_average_allowed_min,
+      batting_average_allowed_max,
+
       // === FIELDING FILTERS ===
       fielding_percentage_min,
       fielding_percentage_max,
@@ -1394,6 +1474,29 @@ export const getUncommittedPLayer = async (req, res) => {
       assists_max,
       double_plays_min,
       double_plays_max,
+
+      total_chances_min,
+      total_chances_max,
+      passed_ball_min,
+      passed_ball_max,
+      stolen_bases_allowed_min,
+      stolen_bases_allowed_max,
+      runners_caught_stealing_percentage_min,
+      runners_caught_stealing_percentage_max,
+      runners_caught_stealing_min,
+      runners_caught_stealing_max,
+      catcher_interference_min,
+      catcher_interference_max,
+      fielding_games_min,
+      fielding_games_max,
+      stolen_base_success_rate_min,
+      stolen_base_success_rate_max,
+      caught_stealing_by_catcher_min,
+      caught_stealing_by_catcher_max,
+      stolen_base_attempt_percentage_min,
+      stolen_base_attempt_percentage_max,
+      f_stolen_bases_against_min,
+      f_stolen_bases_against_max,
 
       commitmentStatus,
       name,
@@ -1444,6 +1547,8 @@ export const getUncommittedPLayer = async (req, res) => {
       filter.position = { $regex: position, $options: "i" };
     }
 
+
+
     // === BATTING FILTERS ===
     // const num = v => (v !== undefined ? Number(v) : undefined);
     applyStatRange(filter, "battingStats", "batting_average", batting_average_min, batting_average_max);
@@ -1458,6 +1563,22 @@ export const getUncommittedPLayer = async (req, res) => {
     applyStatRange(filter, "battingStats", "walks", walks_min, walks_max);
     applyStatRange(filter, "battingStats", "strikeouts", strikeouts_min, strikeouts_max);
     applyStatRange(filter, "battingStats", "stolen_bases", stolen_bases_min, stolen_bases_max);
+    
+    applyStatRange(filter, "battingStats", "total_bases", total_base_min, total_base_max);
+    applyStatRange(filter, "battingStats", "on_base_plus_slugging", on_base_plus_slugging_min, on_base_plus_slugging_max);
+    applyStatRange(filter, "battingStats", "caught_stealing", caught_stealing_min, caught_stealing_max);
+    applyStatRange(filter, "battingStats", "at_bats", at_bats_min, at_bats_max);
+    applyStatRange(filter, "battingStats", "hit_by_pitch", hit_by_min, hit_by_max);
+    applyStatRange(filter, "battingStats", "sacrifice_flies", sacrifice_flie_min, sacrifice_flie_max);
+    applyStatRange(filter, "battingStats", "sacrifice_hits", sacrifice_hit_min, sacrifice_hit_max);
+    applyStatRange(filter, "battingStats", "games_started", games_start_min, games_start_max);
+    applyStatRange(filter, "battingStats", "games_played", games_play_min, games_play_max);
+    applyStatRange(filter, "battingStats", "grounded_into_double_play", grounded_into_double_play_min, grounded_into_double_play_max);
+    applyStatRange(filter, "battingStats", "stolen_bases_against", stolen_bases_against_min, stolen_bases_against_max);
+    applyStatRange(filter, "battingStats", "intentional_walks", intentional_walk_min, intentional_walk_max);
+    applyStatRange(filter, "battingStats", "walk_percentage", walk_percentage_min, walk_percentage_max);
+    applyStatRange(filter, "battingStats", "strikeout_percentage", strikeout_percentage_min, strikeout_percentage_max);
+
 
     // === PITCHING FILTERS ===
     applyStatRange(filter, "pitchingStats", "era", era_min, era_max);
@@ -1468,6 +1589,24 @@ export const getUncommittedPLayer = async (req, res) => {
     applyStatRange(filter, "pitchingStats", "walks_allowed", walks_allowed_min, walks_allowed_max);
     applyStatRange(filter, "pitchingStats", "hits_allowed", hits_allowed_min, hits_allowed_max);
     applyStatRange(filter, "pitchingStats", "saves", saves_min, saves_max);
+    
+    applyStatRange(filter, "pitchingStats",  "appearances", appearances_min, appearances_max);
+    applyStatRange(filter, "pitchingStats",  "doubles_allowed", doubles_allow_min, doubles_allow_max);
+    applyStatRange(filter, "pitchingStats",  "home_runs_allowed", home_runs_allow_min, home_runs_allow_max);
+    applyStatRange(filter, "pitchingStats",  "complete_games", complete_game_min, complete_game_max);
+    applyStatRange(filter, "pitchingStats",  "earned_runs", earn_run_min, earn_run_max);
+    applyStatRange(filter, "pitchingStats",  "batting_average_against", batting_average_against_min, batting_average_against_max, parseFloat);
+    applyStatRange(filter, "pitchingStats",  "wild_pitches", wild_pitche_min, wild_pitche_max);
+    applyStatRange(filter, "pitchingStats",  "games_pitched", games_pitch_min, games_pitch_max);
+    applyStatRange(filter, "pitchingStats",  "shutouts", shutouts_min, shutouts_max);
+    applyStatRange(filter, "pitchingStats",  "runs_allowed", runs_allowed_min, runs_allowed_max);
+    applyStatRange(filter, "pitchingStats",  "triples_allowed", triples_allowed_min, triples_allowed_max);
+    applyStatRange(filter, "pitchingStats",  "at_bats_against", at_bats_against_min, at_bats_against_max);
+    applyStatRange(filter, "pitchingStats",  "hit_batters", hit_batters_min, hit_batters_max);
+    applyStatRange(filter, "pitchingStats",  "balks", balks_min, balks_max);
+    applyStatRange(filter, "pitchingStats",  "sacrifice_flies_allowed", sacrifice_flies_allowed_min, sacrifice_flies_allowed_max);
+    applyStatRange(filter, "pitchingStats",  "sacrifice_hits_allowed", sacrifice_hits_allowed_min, sacrifice_hits_allowed_max);
+    applyStatRange(filter, "pitchingStats",  "batting_average_allowed", batting_average_allowed_min, batting_average_allowed_max, parseFloat);
 
     // === FIELDING FILTERS ===
     applyStatRange(filter, "fieldingStats", "fielding_percentage", fielding_percentage_min, fielding_percentage_max);
@@ -1475,6 +1614,17 @@ export const getUncommittedPLayer = async (req, res) => {
     applyStatRange(filter, "fieldingStats", "putouts", putouts_min, putouts_max);
     applyStatRange(filter, "fieldingStats", "assists", assists_min, assists_max);
     applyStatRange(filter, "fieldingStats", "double_plays", double_plays_min, double_plays_max);
+    applyStatRange(filter, "fieldingStats", "total_chances", total_chances_min, total_chances_max);
+    applyStatRange(filter, "fieldingStats", "passed_balls", passed_ball_min, passed_ball_max);
+    applyStatRange(filter, "fieldingStats", "stolen_bases_allowed", stolen_bases_allowed_min, stolen_bases_allowed_max);
+    applyStatRange(filter, "fieldingStats", "runners_caught_stealing_percentage",runners_caught_stealing_percentage_min, runners_caught_stealing_percentage_max, parseFloat);
+    applyStatRange(filter, "fieldingStats", "catcher_interference", catcher_interference_min, catcher_interference_max);
+    applyStatRange(filter, "fieldingStats", "fielding_games", fielding_games_min, fielding_games_max);
+    applyStatRange(filter, "fieldingStats", "stolen_base_success_rate", stolen_base_success_rate_min, stolen_base_success_rate_max, parseFloat);
+    applyStatRange(filter, "fieldingStats", "caught_stealing_by_catcher", caught_stealing_by_catcher_min, caught_stealing_by_catcher_max);
+    applyStatRange(filter, "fieldingStats", "stolen_bases_against", f_stolen_bases_against_min, f_stolen_bases_against_max);
+    applyStatRange(filter, "fieldingStats", "stolen_base_attempt_percentage", stolen_base_attempt_percentage_min, stolen_base_attempt_percentage_max, parseFloat );
+    applyStatRange(filter, "fieldingStats", "runners_caught_stealing", runners_caught_stealing_min, runners_caught_stealing_max);
 
 
     // === FETCH DATA ===

@@ -184,7 +184,7 @@ export const registerPlayer = async (req, res) => {
 };
 
 // Step 2: Get all teams (for dropdown)
-export const getTeams = async (req, res) => {
+export const getTeamsWithoutPagination = async (req, res) => {
   try {
     const baseURL = `${req.protocol}://${req.get("host")}`;
     const teams = await Team.find().sort({ name: 1 }); // Sort by name A-Z
@@ -222,6 +222,65 @@ export const getTeams = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const getTeams = async (req, res) => {
+  try {
+    const baseURL = `${req.protocol}://${req.get("host")}`;
+
+    // pagination params
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // total teams count
+    const totalTeams = await Team.countDocuments();
+
+    // paginated teams
+    const teams = await Team.find()
+      .sort({ name: 1 }) // A-Z
+      .skip(skip)
+      .limit(limit);
+
+    // Get player count for each team
+    const teamsWithCount = await Promise.all(
+      teams.map(async (team) => {
+        const playerCount = await User.countDocuments({
+          team: team._id,
+          role: "player",
+          registrationStatus: "approved",
+          isActive: true
+        });
+
+        const teamData = team.toObject();
+
+        // Format logo URL
+        if (teamData.logo && !teamData.logo.startsWith("http")) {
+          teamData.logo = `${baseURL}${teamData.logo}`;
+        }
+
+        return {
+          ...teamData,
+          playerCount
+        };
+      })
+    );
+
+    res.json({
+      message: "Teams retrieved successfully",
+      teams: teamsWithCount,
+      pagination: {
+        totalTeams,
+        totalPages: Math.ceil(totalTeams / limit),
+        currentPage: page,
+        limit
+      }
+    });
+  } catch (error) {
+    console.error("Get All Teams Error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
 // GET TEAM BY ID
 export const getTeamById = async (req, res) => {

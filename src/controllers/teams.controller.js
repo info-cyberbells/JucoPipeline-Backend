@@ -113,6 +113,35 @@ export const getTeamRoster = async (req, res) => {
       strikeouts_max,
       stolen_bases_min,
       stolen_bases_max,
+
+      total_base_min,
+      total_base_max,
+      on_base_plus_slugging_min,
+      on_base_plus_slugging_max,
+      caught_stealing_min,
+      caught_stealing_max,
+      at_bats_min,
+      at_bats_max,
+      hit_by_min,
+      hit_by_max,
+      sacrifice_flie_min,
+      sacrifice_flie_max,
+      sacrifice_hit_min,
+      sacrifice_hit_max,
+      games_play_min,
+      games_play_max,
+      games_start_min,
+      games_start_max,
+      grounded_into_double_play_min,
+      grounded_into_double_play_max,
+      stolen_bases_against_min,
+      stolen_bases_against_max,
+      intentional_walk_min,
+      intentional_walk_max,
+      walk_percentage_min,
+      walk_percentage_max,
+      strikeout_percentage_min,
+      strikeout_percentage_max,
       
       // === PITCHING FILTERS ===
       era_min,
@@ -131,6 +160,41 @@ export const getTeamRoster = async (req, res) => {
       hits_allowed_max,
       saves_min,
       saves_max,
+
+      appearances_min,
+      appearances_max,
+      doubles_allow_min,
+      doubles_allow_max,
+      home_runs_allow_min,
+      home_runs_allow_max,
+      complete_game_min,
+      complete_game_max,
+      earn_run_min,
+      earn_run_max,
+      batting_average_against_min,
+      batting_average_against_max,
+      wild_pitche_min,
+      wild_pitche_max,
+      games_pitch_min,
+      games_pitch_max,
+      shutouts_min,
+      shutouts_max,
+      runs_allowed_min,
+      runs_allowed_max,
+      triples_allowed_min,
+      triples_allowed_max,
+      at_bats_against_min,
+      at_bats_against_max,
+      hit_batters_min,
+      hit_batters_max,
+      balks_min,
+      balks_max,
+      sacrifice_flies_allowed_min,
+      sacrifice_flies_allowed_max,
+      sacrifice_hits_allowed_min,
+      sacrifice_hits_allowed_max,
+      batting_average_allowed_min,
+      batting_average_allowed_max,
       
       // === FIELDING FILTERS ===
       fielding_percentage_min,
@@ -142,7 +206,30 @@ export const getTeamRoster = async (req, res) => {
       assists_min,
       assists_max,
       double_plays_min,
-      double_plays_max
+      double_plays_max,
+
+      total_chances_min,
+      total_chances_max,
+      passed_ball_min,
+      passed_ball_max,
+      stolen_bases_allowed_min,
+      stolen_bases_allowed_max,
+      runners_caught_stealing_percentage_min,
+      runners_caught_stealing_percentage_max,
+      runners_caught_stealing_min,
+      runners_caught_stealing_max,
+      catcher_interference_min,
+      catcher_interference_max,
+      fielding_games_min,
+      fielding_games_max,
+      stolen_base_success_rate_min,
+      stolen_base_success_rate_max,
+      caught_stealing_by_catcher_min,
+      caught_stealing_by_catcher_max,
+      stolen_base_attempt_percentage_min,
+      stolen_base_attempt_percentage_max,
+      f_stolen_bases_against_min,
+      f_stolen_bases_against_max,
 
     } = req.query;
 
@@ -285,6 +372,49 @@ export const getTeamRoster = async (req, res) => {
       const stolenBases = buildRange(stolen_bases_min, stolen_bases_max);
       if (stolenBases) elem.stolen_bases = stolenBases;
 
+      const totalBases = buildRange(total_base_min, total_base_max);
+      if (totalBases) elem.total_bases = totalBases;
+
+      const ops = buildRange(on_base_plus_slugging_min, on_base_plus_slugging_max, parseFloat);
+      if (ops) elem.on_base_plus_slugging = ops;
+
+      const caughtStealing = buildRange(caught_stealing_min, caught_stealing_max);
+      if (caughtStealing) elem.caught_stealing = caughtStealing;
+
+      const atBats = buildRange(at_bats_min, at_bats_max);
+      if (atBats) elem.at_bats = atBats;
+
+      const hitByPitch = buildRange(hit_by_min, hit_by_max);
+      if (hitByPitch) elem.hit_by_pitch = hitByPitch;
+
+      const sacrificeFlies = buildRange(sacrifice_flie_min, sacrifice_flie_max);
+      if (sacrificeFlies) elem.sacrifice_flies = sacrificeFlies;
+
+      const sacrificeHits = buildRange(sacrifice_hit_min, sacrifice_hit_max);
+      if (sacrificeHits) elem.sacrifice_hits = sacrificeHits;
+
+      const gamesStarted = buildRange(games_start_min, games_start_max);
+      if (gamesStarted) elem.games_started = gamesStarted;
+
+      const gamesPlayed = buildRange(games_play_min, games_play_max);
+      if (gamesPlayed) elem.games_played = gamesPlayed;
+
+      const gidp = buildRange(grounded_into_double_play_min, grounded_into_double_play_max);
+      if (gidp) elem.grounded_into_double_play = gidp;
+
+      const stolenBasesAgainst = buildRange(stolen_bases_against_min, stolen_bases_against_max);
+      if (stolenBasesAgainst) elem.stolen_bases_against = stolenBasesAgainst;
+
+      const intentionalWalks = buildRange(intentional_walk_min, intentional_walk_max);
+      if (intentionalWalks) elem.intentional_walks = intentionalWalks;
+
+      const walkPct = buildRange(walk_percentage_min, walk_percentage_max, parseFloat);
+      if (walkPct) elem.walk_percentage = walkPct;
+
+      const strikeoutPct = buildRange(strikeout_percentage_min, strikeout_percentage_max, parseFloat);
+      if (strikeoutPct) elem.strikeout_percentage = strikeoutPct;
+
+
       if (Object.keys(elem).length > 1) {
         pipeline.push({
           $match: {
@@ -322,6 +452,72 @@ export const getTeamRoster = async (req, res) => {
       const savesMin = buildRange(saves_min, saves_max, true);
       if (savesMin) elem.saves = savesMin;
 
+      const appearances = buildRange(appearances_min, appearances_max);
+      if (appearances) elem.appearances = appearances;
+
+      const doublesAllowed = buildRange(doubles_allow_min, doubles_allow_max);
+      if (doublesAllowed) elem.doubles_allowed = doublesAllowed;
+
+      const homeRunsAllowed = buildRange(home_runs_allow_min, home_runs_allow_max);
+      if (homeRunsAllowed) elem.home_runs_allowed = homeRunsAllowed;
+
+      const completeGames = buildRange(complete_game_min, complete_game_max);
+      if (completeGames) elem.complete_games = completeGames;
+
+      const earnedRuns = buildRange(earn_run_min, earn_run_max);
+      if (earnedRuns) elem.earned_runs = earnedRuns;
+
+      const battingAvgAgainst = buildRange(
+        batting_average_against_min,
+        batting_average_against_max,
+        parseFloat
+      );
+      if (battingAvgAgainst) elem.batting_average_against = battingAvgAgainst;
+
+      const wildPitches = buildRange(wild_pitche_min, wild_pitche_max);
+      if (wildPitches) elem.wild_pitches = wildPitches;
+
+      const gamesPitched = buildRange(games_pitch_min, games_pitch_max);
+      if (gamesPitched) elem.games_pitched = gamesPitched;
+
+      const shutouts = buildRange(shutouts_min, shutouts_max);
+      if (shutouts) elem.shutouts = shutouts;
+
+      const runsAllowed = buildRange(runs_allowed_min, runs_allowed_max);
+      if (runsAllowed) elem.runs_allowed = runsAllowed;
+
+      const triplesAllowed = buildRange(triples_allowed_min, triples_allowed_max);
+      if (triplesAllowed) elem.triples_allowed = triplesAllowed;
+
+      const atBatsAgainst = buildRange(at_bats_against_min, at_bats_against_max);
+      if (atBatsAgainst) elem.at_bats_against = atBatsAgainst;
+
+      const hitBatters = buildRange(hit_batters_min, hit_batters_max);
+      if (hitBatters) elem.hit_batters = hitBatters;
+
+      const balks = buildRange(balks_min, balks_max);
+      if (balks) elem.balks = balks;
+
+      const sacrificeFliesAllowed = buildRange(
+        sacrifice_flies_allowed_min,
+        sacrifice_flies_allowed_max
+      );
+      if (sacrificeFliesAllowed) elem.sacrifice_flies_allowed = sacrificeFliesAllowed;
+
+      const sacrificeHitsAllowed = buildRange(
+        sacrifice_hits_allowed_min,
+        sacrifice_hits_allowed_max
+      );
+      if (sacrificeHitsAllowed) elem.sacrifice_hits_allowed = sacrificeHitsAllowed;
+
+      const battingAverageAllowed = buildRange(
+        batting_average_allowed_min,
+        batting_average_allowed_max,
+        parseFloat
+      );
+      if (battingAverageAllowed) elem.batting_average_allowed = battingAverageAllowed;
+
+
       if (Object.keys(elem).length > 1) {
         pipeline.push({
           $match: {
@@ -349,6 +545,61 @@ export const getTeamRoster = async (req, res) => {
 
       const doublePlays = buildRange(double_plays_min, double_plays_max);
       if (doublePlays) elem.double_plays = doublePlays;
+
+      const totalChances = buildRange(total_chances_min, total_chances_max);
+      if (totalChances) elem.total_chances = totalChances;
+
+      const passedBalls = buildRange(passed_ball_min, passed_ball_max);
+      if (passedBalls) elem.passed_balls = passedBalls;
+
+      const stolenBasesAllowed = buildRange(stolen_bases_allowed_min, stolen_bases_allowed_max);
+      if (stolenBasesAllowed) elem.stolen_bases_allowed = stolenBasesAllowed;
+
+      const rcsPct = buildRange(
+        runners_caught_stealing_percentage_min,
+        runners_caught_stealing_percentage_max,
+        parseFloat
+      );
+      if (rcsPct) elem.runners_caught_stealing_percentage = rcsPct;
+
+      const catcherInterference = buildRange(catcher_interference_min, catcher_interference_max);
+      if (catcherInterference) elem.catcher_interference = catcherInterference;
+
+      const fieldingGames = buildRange(fielding_games_min, fielding_games_max);
+      if (fieldingGames) elem.fielding_games = fieldingGames;
+
+      const sbsRate = buildRange(
+        stolen_base_success_rate_min,
+        stolen_base_success_rate_max,
+        parseFloat
+      );
+      if (sbsRate) elem.stolen_base_success_rate = sbsRate;
+
+      const caughtStealingByCatcher = buildRange(
+        caught_stealing_by_catcher_min,
+        caught_stealing_by_catcher_max
+      );
+      if (caughtStealingByCatcher) elem.caught_stealing_by_catcher = caughtStealingByCatcher;
+
+      const stolenBasesAgainst = buildRange(
+        f_stolen_bases_against_min,
+        f_stolen_bases_against_max
+      );
+      if (stolenBasesAgainst) elem.stolen_bases_against = stolenBasesAgainst;
+
+      const sbaPct = buildRange(
+        stolen_base_attempt_percentage_min,
+        stolen_base_attempt_percentage_max,
+        parseFloat
+      );
+      if (sbaPct) elem.stolen_base_attempt_percentage = sbaPct;
+
+      const runnersCaughtStealing = buildRange(
+        runners_caught_stealing_min,
+        runners_caught_stealing_max
+      );
+      if (runnersCaughtStealing) elem.runners_caught_stealing = runnersCaughtStealing;
+
 
       if (Object.keys(elem).length > 1) {
         pipeline.push({
