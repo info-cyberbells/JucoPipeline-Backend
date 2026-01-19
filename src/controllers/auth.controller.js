@@ -66,7 +66,7 @@ export const getUSStates = async (req, res) => {
 // Step 1: Player Registration
 export const registerPlayer = async (req, res) => {
   try {
-    let { firstName, lastName, email, phoneNumber, teamId } = req.body;
+    let { firstName, lastName, email, phoneNumber, teamId, ncaaId, xURL, instaURL } = req.body;
 
     // Validate required fields
     if (!firstName || !lastName) {
@@ -128,9 +128,15 @@ export const registerPlayer = async (req, res) => {
       existingPlayer.phoneNumber = phoneNumber || existingPlayer.phoneNumber;
       existingPlayer.registrationStatus = "inProgress";
       existingPlayer.photoIdDocument = photoIdDocumentData;
+      existingPlayer.xURL = xURL;
+      existingPlayer.instaURL = instaURL;
 
       if (teamId) {
         existingPlayer.team = teamId;
+      }
+
+      if (ncaaId && !existingPlayer.ncaaId) {
+        existingPlayer.ncaaId = ncaaId;
       }
 
       await existingPlayer.save();
@@ -145,6 +151,9 @@ export const registerPlayer = async (req, res) => {
         phoneNumber,
         role: "player",
         registrationStatus: "inProgress",
+        ncaaId:ncaaId, 
+        xURL:xURL, 
+        instaURL:instaURL, 
         photoIdDocument: photoIdDocumentData
       };
 

@@ -176,6 +176,7 @@ export const updatePlayerProfile = async (req, res) => {
       previousSchool,
       instaURL,
       xURL,
+      ncaaId,
       academic_info_gpa, academic_info_sat, academic_info_act, transferStatus, height, weight, commitmentStatus, playerClass
     } = req.body;
 
@@ -196,6 +197,7 @@ export const updatePlayerProfile = async (req, res) => {
     if (previousSchool !== undefined) player.previousSchool = previousSchool;
     if (instaURL !== undefined) player.instaURL = instaURL;
     if (xURL !== undefined) player.xURL = xURL;
+    if (ncaaId !== undefined) player.ncaaId = ncaaId;
 
     if (academic_info_gpa !== undefined) player.academic_info_gpa = academic_info_gpa;
     if (academic_info_sat !== undefined) player.academic_info_sat = academic_info_sat;

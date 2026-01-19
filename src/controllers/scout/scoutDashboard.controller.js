@@ -106,7 +106,9 @@ export const getScoutDashboard = async (req, res) => {
       assists_min,
       assists_max,
       double_plays_min,
-      double_plays_max
+      double_plays_max,
+
+      position
     } = req.query;
 
     const buildElemMatch = (seasonYear) => {
@@ -149,6 +151,10 @@ export const getScoutDashboard = async (req, res) => {
         _id: { $in: followingList },
         role: "player"
       };
+
+      if (position && position !== "all") {
+        filterQuery.position = { $regex: position, $options: "i" };
+      }
 
       // === APPLY BATTING FILTERS ===
       if (statsType === "batting") {

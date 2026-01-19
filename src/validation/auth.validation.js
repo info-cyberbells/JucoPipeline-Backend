@@ -12,7 +12,10 @@ export const playerRegisterSchema = Joi.object({
   phoneNumber: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).required().messages({ 
     "string.pattern.base": "Invalid phone number format" 
   }),
-  teamId: objectId.optional()
+  teamId: objectId.optional(),
+  ncaaId: Joi.string().trim().allow(null, '').optional(),
+  xURL: Joi.string().trim().allow(null, '').optional(),
+  instaURL: Joi.string().trim().allow(null, '').optional(),
 }).unknown(false);
 
 // Player login (Passwordless)

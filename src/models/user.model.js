@@ -139,6 +139,10 @@ const userSchema = new mongoose.Schema(
         return this.role === "player";
       }
     },
+    ncaaId: {
+      type: Number,
+      default: null
+    },
     academic_info_gpa: {
       type: Number,
       min: 0,
