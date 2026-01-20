@@ -694,20 +694,20 @@ export const getScoutDashboard = async (req, res) => {
         const positionDetailName = POSITION_DETAIL_MAP[positionCode] || "Unknown Position";
 
         // Get latest stats
-        // const latestBattingStats = userData.battingStats || [];
-        // const latestPitchingStats = userData.pitchingStats || [];
-        // const latestFieldingStats = userData.fieldingStats || [];
-        const battingStatsArray = (userData.battingStats || []).filter(
-          stat => stat.seasonYear === seasonYear
-        );
+        const latestBattingStats = userData.battingStats || [];
+        const latestPitchingStats = userData.pitchingStats || [];
+        const latestFieldingStats = userData.fieldingStats || [];
+        // const battingStatsArray = (userData.battingStats || []).filter(
+        //   stat => stat.seasonYear === seasonYear
+        // );
 
-        const pitchingStatsArray = (userData.pitchingStats || []).filter(
-          stat => stat.seasonYear === seasonYear
-        );
+        // const pitchingStatsArray = (userData.pitchingStats || []).filter(
+        //   stat => stat.seasonYear === seasonYear
+        // );
 
-        const fieldingStatsArray = (userData.fieldingStats || []).filter(
-          stat => stat.seasonYear === seasonYear
-        );
+        // const fieldingStatsArray = (userData.fieldingStats || []).filter(
+        //   stat => stat.seasonYear === seasonYear
+        // );
 
         // Format videos with full URLs
         const formattedVideos = userData.videos && userData.videos.length > 0

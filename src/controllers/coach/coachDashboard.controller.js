@@ -203,6 +203,7 @@ export const getCoachDashboard = async (req, res) => {
     const buildElemMatch = (seasonYear) => {
       return seasonYear ? { seasonYear: seasonYear } : {};
     };
+
     const baseURL = `${req.protocol}://${req.get("host")}`;
     const coach = await User.findById(coachId).select("-password");
     if (!coach || coach.role !== "coach") {
@@ -688,21 +689,21 @@ export const getCoachDashboard = async (req, res) => {
         const positionDetailName = POSITION_DETAIL_MAP[positionCode] || "Unknown Position";
 
         // Get latest stats (keep as arrays like roster API)
-        // const battingStatsArray = userData.battingStats || [];
-        // const pitchingStatsArray = userData.pitchingStats || [];
-        // const fieldingStatsArray = userData.fieldingStats || [];
+        const battingStatsArray = userData.battingStats || [];
+        const pitchingStatsArray = userData.pitchingStats || [];
+        const fieldingStatsArray = userData.fieldingStats || [];
 
-        const battingStatsArray = (userData.battingStats || []).filter(
-          stat => stat.seasonYear === seasonYear
-        );
+        // const battingStatsArray = (userData.battingStats || []).filter(
+        //   stat => stat.seasonYear === seasonYear
+        // );
 
-        const pitchingStatsArray = (userData.pitchingStats || []).filter(
-          stat => stat.seasonYear === seasonYear
-        );
+        // const pitchingStatsArray = (userData.pitchingStats || []).filter(
+        //   stat => stat.seasonYear === seasonYear
+        // );
 
-        const fieldingStatsArray = (userData.fieldingStats || []).filter(
-          stat => stat.seasonYear === seasonYear
-        );
+        // const fieldingStatsArray = (userData.fieldingStats || []).filter(
+        //   stat => stat.seasonYear === seasonYear
+        // );
 
 
         // Format videos with full URLs
