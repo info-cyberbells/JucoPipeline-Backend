@@ -2,6 +2,8 @@ import User from "../../models/user.model.js";
 import VideoRequest from "../../models/videoRequest.model.js";
 import { sendApprovalEmail, sendRejectionEmail } from "../../services/email.service.js";
 import { generateSuperStrongPassword } from "../../utils/passwordGenerator.js";
+import Notification from "../../models/notification.model.js";
+import AdminNotificationSetting from "../../models/adminNotificationSetting.model.js";
 
 // Helper to format user data with full URLs
 const formatUserData = (user, baseURL) => {
@@ -437,6 +439,82 @@ export const updateVideoRequestStatus = async (req, res) => {
       request
     });
 
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+// notifications
+export const getAdminNotifications = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const notifications = await Notification.find({
+      recipientRole: "superAdmin"
+    })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("createdBy", "firstName lastName role");
+
+    const unreadCount = await Notification.countDocuments({
+      recipientRole: "superAdmin",
+      isRead: false
+    });
+
+    res.status(200).json({
+      page,
+      limit,
+      unreadCount,
+      notifications
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+// notification-settings
+export const getAdminNotificationSettings = async (req, res) => {
+  try {
+    let settings = await AdminNotificationSetting.findOne({
+      adminRole: "superAdmin"
+    });
+
+    // Auto-create default settings
+    if (!settings) {
+      settings = await AdminNotificationSetting.create({
+        adminRole: "superAdmin"
+      });
+    }
+
+    res.status(200).json(settings);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+// notification-settings
+export const updateAdminNotificationSettings = async (req, res) => {
+  try {
+    const { triggers } = req.body;
+
+    const settings = await AdminNotificationSetting.findOneAndUpdate(
+      { adminRole: "superAdmin" },
+      { triggers },
+      { new: true, upsert: true }
+    );
+
+    res.status(200).json({
+      message: "Notification settings updated successfully",
+      settings
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

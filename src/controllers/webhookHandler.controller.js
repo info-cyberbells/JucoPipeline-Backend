@@ -3,6 +3,7 @@ import outseta from "../config/outseta.config.js";
 import User from "../models/user.model.js";
 import PendingRegistration from "../models/pendingRegistration.model.js";
 import Subscription from "../models/subscription.model.js";
+import { createAdminNotification } from "../utils/adminNotification.js";
 import mongoose from "mongoose";
 
 
@@ -584,11 +585,11 @@ async function handleOutsetaSubscriptionCreatedOLLDD(data) {
 }
 
 async function handleOutsetaSubscriptionCreated(account) {
-  console.log("🆕 Outseta subscription created for account:", account.Uid);
+  console.log("Outseta subscription created for account:", account.Uid);
 
   const subscription = account.CurrentSubscription;
   if (!subscription) {
-    console.log("⚠️ No active subscription found");
+    console.log("No active subscription found");
     return;
   }
 
@@ -599,39 +600,23 @@ async function handleOutsetaSubscriptionCreated(account) {
   const pendingReg = await PendingRegistration.findOne({ email });
 
   if (!pendingReg) {
-    console.log("⚠️ No pending registration found");
+    console.log("No pending registration found");
     return;
   }
 
   if (pendingReg.status === "completed") {
-    console.log("⚠️ Registration already completed");
+    console.log("Registration already completed");
     return;
   }
 
   // 🔎 Prevent duplicate user creation
   const existingUser = await User.findOne({ outsetaAccountUid: accountUid });
   if (existingUser) {
-    console.log("⚠️ User already exists");
+    console.log("User already exists");
     return;
   }
 
-  // ✅ Create User
-  // const user = await User.create({
-  //   firstName: pendingReg.firstName,
-  //   lastName: pendingReg.lastName,
-  //   email,
-  //   password: pendingReg.password,
-  //   role: pendingReg.role,
-  //   registrationStatus: "approved",
-
-  //   outsetaAccountUid: accountUid,
-  //   outsetaPersonUid: account.PrimaryContact.Uid,
-  //   state: pendingReg.state,
-  //   subscriptionStatus: "active",
-  //   subscriptionPlan: subscription.Plan.Name,
-  //   subscriptionEndDate: new Date(subscription.RenewalDate)
-  // });
-
+  // Create User
   const userData = {
     firstName: pendingReg.firstName,
     lastName: pendingReg.lastName,
@@ -662,7 +647,7 @@ async function handleOutsetaSubscriptionCreated(account) {
 
   const user = await User.create(userData);
 
-  // ✅ Create Subscription record
+  // Create Subscription record
   await Subscription.create({
     user: user._id,
     outsetaSubscriptionUid: subscription.Uid,
@@ -674,12 +659,21 @@ async function handleOutsetaSubscriptionCreated(account) {
     paymentProvider: "outseta"
   });
 
-  // ✅ Finalize pending registration
+  // Finalize pending registration
   pendingReg.status = "completed";
   pendingReg.outsetaAccountUid = accountUid;
   await pendingReg.save();
 
-  console.log("✅ User + Subscription successfully created from Outseta");
+  // SuperAdmin Notifications
+  await createAdminNotification({
+    title: "New User Registered",
+    message: `${user.role.toUpperCase()} ${user.firstName} ${user.lastName} registered successfully.`,
+    type: "USER_REGISTRATION",
+    referenceId: user._id,
+    createdBy: user._id
+  });
+
+  console.log("User + Subscription successfully created from Outseta");
 }
 
 

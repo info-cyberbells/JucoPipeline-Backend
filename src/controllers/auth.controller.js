@@ -12,6 +12,7 @@ import PendingRegistration from "../models/pendingRegistration.model.js";
 import Subscription from "../models/subscription.model.js";
 import stripe, { SUBSCRIPTION_PLANS } from "../config/stripe.js";
 import { PAYPAL_SUBSCRIPTION_PLANS, paypalAPI } from "../config/paypal.config.js";
+import { createAdminNotification } from "../utils/adminNotification.js";
 
 // Helper function to generate base URL
 const getBaseURL = (req) => `${req.protocol}://${req.get("host")}`;
@@ -166,6 +167,14 @@ export const registerPlayer = async (req, res) => {
 
     // Populate team data
     await player.populate('team', 'name logo location division');
+
+    // SuperAdmin Notification
+    await createAdminNotification({
+      title: "New Player Registration",
+      message: `${player.getFullName()} has submitted registration for approval.`,
+      type: "PLAYER_REGISTRATION",
+      referenceId: player._id
+    });
 
     // Format data
     const baseURL = getBaseURL(req);
@@ -514,6 +523,14 @@ export const loginPlayer = async (req, res) => {
       player.registrationStatus = "inProgress";
       await player.save();
 
+      // SuperAdmin Notification
+      await createAdminNotification({
+        title: "Player Claimed Profile",
+        message: `${player.getFullName()} has claimed their profile and is pending verification.`,
+        type: "PLAYER_LOGIN_CLAIM",
+        referenceId: player._id
+      });
+
       return res.status(200).json({
         status: true,
         message: "Your registration is currently in progress. Please wait while we verify your information.",
@@ -698,6 +715,15 @@ export const register = async (req, res) => {
 
     const baseURL = getBaseURL(req);
     const formattedUser = formatUserData(user, baseURL);
+
+    // SuperAdmin Notifications
+    await createAdminNotification({
+      title: "New User Registered",
+      message: `${role.toUpperCase()} ${user.firstName} ${user.lastName} registered successfully.`,
+      type: "USER_REGISTRATION",
+      referenceId: user._id,
+      createdBy: user._id
+    });
 
     res.status(201).json({
       message: `${role} registered successfully`,
@@ -1253,9 +1279,7 @@ export const registerWithPayment = async (req, res) => {
     // ===============================
     // Profile image
     // ===============================
-    const profileImage = req.files?.profileImage
-      ? `/uploads/profiles/${req.files.profileImage[0].filename}`
-      : null;
+    const profileImage = req.files?.profileImage ? `/uploads/profiles/${req.files.profileImage[0].filename}` : null;
 
     // ===============================
     // Create pending registration

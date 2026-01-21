@@ -3,7 +3,7 @@ import { authenticate } from "../middleware/auth.middleware.js";
 import { authorizeRoles } from "../middleware/role.middleware.js";
 import { getProfile, updateProfile, changePassword } from "../controllers/profile.controller.js";
 import { validateChangePassword } from "../validation/profile.validation.js";
-import { getPendingApprovals, getUserDetails, approveUser, rejectUser, getPendingCounts, getVideoRequests, updateVideoRequestStatus} from "../controllers/superAdmin/superAdmin.controller.js";
+import { getPendingApprovals, getUserDetails, approveUser, rejectUser, getPendingCounts, getVideoRequests, updateVideoRequestStatus, getAdminNotifications, getAdminNotificationSettings, updateAdminNotificationSettings} from "../controllers/superAdmin/superAdmin.controller.js";
 import { getAllUsers, updateUser, updateUserStatus, manualEditListing } from "../controllers/superAdmin/userManagement.controller.js";
 import { getAllScrapeJobs, getScrapeJobById, deleteScrapeJob, getScrapeJobsStats, updateScrapeJob, getAllUsersByRole } from "../controllers/superAdmin/scrapeJobs.controller.js";
 import { createGame, getAllGames, getGameById, updateGame, deleteGame, getGameStatistics, bulkDeleteGames, updateGameStatus,  } from "../controllers/superAdmin/game.controller.js";
@@ -69,5 +69,8 @@ router.get("/get-users-by-roles", getAllUsersByRole);
 
 router.get("/video-requests", getVideoRequests);   
 router.patch("/video-request/:id", updateVideoRequestStatus);
+router.get("/notifications", getAdminNotifications);
+router.get("/notification-settings", getAdminNotificationSettings);
+router.patch("/notification-settings", updateAdminNotificationSettings);
 
 export default router;

@@ -4,6 +4,7 @@ import FollowTeam from "../../models/followTeam.model.js";
 import Team from "../../models/team.model.js";
 import VideoRequest from "../../models/videoRequest.model.js";
 import mongoose from "mongoose";
+import { createAdminNotification } from "../../utils/adminNotification.js";
 
 // Helper to format user data
 const formatUserData = (user, baseURL) => {
@@ -1265,6 +1266,16 @@ export const requestMoreVideo = async (req, res) => {
       requestedBy: coachId,
       note
     });
+
+    // Super Admin Notifications
+    await createAdminNotification({
+      title: "Video Request from Coach",
+      message: `${coach.firstName} ${coach.lastName} requested more video for ${player.getFullName()}.`,
+      type: "VIDEO_REQUEST",
+      referenceId: request._id,
+      createdBy: coachId
+    });
+
 
     res.status(201).json({
       message: "Video request sent to admin successfully",
