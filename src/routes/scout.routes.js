@@ -9,6 +9,7 @@ import { getPlayerById, getUncommittedPLayer, getTop10PlayersByMetric, getAvaila
 import { getAllTeams, getTeamRoster } from "../controllers/teams.controller.js";
 import { getCoachStatistics } from "../controllers/coach/statistics.controller.js";
 import { saveFilter, getMyFilters, deleteFilter } from "../controllers/coach/savedFilter.controller.js";
+import { getAllGames, getGameById } from "../controllers/superAdmin/game.controller.js";
 
 const router = express.Router();
 router.use(authenticate, authorizeRoles("scout"));
@@ -53,5 +54,9 @@ router.get("/statistics", getCoachStatistics);
 router.post("/save-filter", saveFilter);
 router.get("/my-filters", getMyFilters);
 router.delete("/delete-filter/:id", deleteFilter);
+
+// Games
+router.get("/games", getAllGames);
+router.get("/game/:gameId", getGameById);
 
 export default router;
