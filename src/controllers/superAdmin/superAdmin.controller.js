@@ -211,9 +211,10 @@ export const approveUser = async (req, res) => {
 
     // Generate temporary password
     const tempPassword = generateSuperStrongPassword();
-    console.log('tempPassword',tempPassword);
+    //console.log('tempPassword',tempPassword);
     // Update user with temp password
     user.password = tempPassword;
+    user.tempPassword = tempPassword;
     user.registrationStatus = "approved";
     user.approvedBy = adminId;
     user.approvedAt = new Date();
