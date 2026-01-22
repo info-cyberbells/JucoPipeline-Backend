@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import { calculateWHIP } from "../utils/whip.util.js";
 
 // Batting Statistics Schema
 const battingStatsSchema = new mongoose.Schema({
@@ -84,6 +85,7 @@ const pitchingStatsSchema = new mongoose.Schema({
   appearances: Number,
   games_started: Number,
   batting_average_allowed: Number,
+  whip: Number,
 }, { _id: false });
 
 const userSchema = new mongoose.Schema(
@@ -474,6 +476,29 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.index({ paypalSubscriptionId: 1 }, { sparse: true });
+
+// Auto-calculate WHIP for pitchingStats
+userSchema.pre("save", function (next) {
+  // Only for players
+  if (this.role !== "player") return next();
+
+  if (!this.pitchingStats || !this.pitchingStats.length) {
+    return next();
+  }
+
+  this.pitchingStats = this.pitchingStats.map((stat) => {
+    stat.whip = calculateWHIP({
+      walks_allowed: stat.walks_allowed || 0,
+      hits_allowed: stat.hits_allowed || 0,
+      innings_pitched: stat.innings_pitched || 0
+    });
+
+    return stat;
+  });
+
+  next();
+});
+
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {

@@ -1,4 +1,5 @@
 import User from "../../models/user.model.js";
+import Team from "../../models/team.model.js";
 import Follow from "../../models/follow.model.js";
 import fs from "fs";
 import path from "path";
@@ -1500,7 +1501,9 @@ export const getUncommittedPLayer = async (req, res) => {
 
       commitmentStatus,
       name,
-      position
+      position,
+      region,
+      conference,
     } = req.query;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -1517,6 +1520,27 @@ export const getUncommittedPLayer = async (req, res) => {
 
     if (commitmentStatus) {
       filter.commitmentStatus = commitmentStatus;
+    }
+
+    // ================= TEAM BASED FILTER =================
+    if ((region && region !== "all") || (conference && conference !== "all")) {
+      const teamFilter = {};
+
+      if (region && region !== "all") {
+        teamFilter.region = new RegExp(`^${region}$`, "i");
+      }
+
+      if (conference && conference !== "all") {
+        teamFilter.conference = new RegExp(`^${conference}$`, "i");
+      }
+
+      const teams = await Team.find(teamFilter).select("_id");
+
+      if (!teams.length) {
+        return res.status(400).json({ message: "No players found for selected region/conference" });
+      }
+
+      filter.team = { $in: teams.map(t => t._id) };
     }
 
     // === SEASON FILTER (ONLY IF PROVIDED) ===
